@@ -14,12 +14,58 @@
   --radius: 18px;
   --font-display: 'Fraunces', 'Times New Roman', serif;
   --font-body: 'Outfit', 'Segoe UI', sans-serif;
+  --page-bg:
+    radial-gradient(1200px 600px at 10% -10%, rgba(47, 111, 94, 0.22), transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, rgba(181, 107, 99, 0.18), transparent 50%),
+    linear-gradient(165deg, #d9e8e1 0%, #f3efe8 42%, #dfe8f0 100%);
+  --tabs-bg: rgba(255, 252, 248, 0.55);
+  --control-bg: rgba(255, 255, 255, 0.7);
+  --input-bg: rgba(255, 255, 255, 0.75);
+  --table-head-bg: rgba(231, 240, 236, 0.65);
+  --metric-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.7), rgba(231, 240, 236, 0.45));
+  --recipient-bg: rgba(255, 255, 255, 0.45);
+  --modal-bg: #fffdf9;
+  --tab-on-fg: #f7f3ee;
+  --btn-primary-fg: #f6fffb;
+  --pill-muted-bg: rgba(20, 34, 31, 0.08);
+  --focus-ring: rgba(47, 111, 94, 0.35);
   color: var(--ink);
   font-family: var(--font-body);
   line-height: 1.45;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+
+[data-theme='dark'] {
+  --ink: #e8efeb;
+  --ink-soft: #a3b5ae;
+  --fog: #1a2421;
+  --paper: rgba(22, 30, 28, 0.92);
+  --line: rgba(232, 239, 235, 0.12);
+  --accent: #5ea892;
+  --accent-deep: #3d7a6a;
+  --blush: #c88a82;
+  --ok: #6bb89e;
+  --warn: #d4a45c;
+  --bad: #c97878;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  --page-bg:
+    radial-gradient(1000px 520px at 8% -8%, rgba(94, 168, 146, 0.18), transparent 55%),
+    radial-gradient(800px 480px at 100% 0%, rgba(200, 138, 130, 0.12), transparent 50%),
+    linear-gradient(165deg, #0f1614 0%, #15201c 45%, #121820 100%);
+  --tabs-bg: rgba(18, 26, 24, 0.72);
+  --control-bg: rgba(255, 255, 255, 0.06);
+  --input-bg: rgba(255, 255, 255, 0.07);
+  --table-head-bg: rgba(255, 255, 255, 0.05);
+  --metric-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(47, 111, 94, 0.12));
+  --recipient-bg: rgba(255, 255, 255, 0.04);
+  --modal-bg: #1a2421;
+  --tab-on-fg: #0f1614;
+  --btn-primary-fg: #0f1614;
+  --pill-muted-bg: rgba(232, 239, 235, 0.1);
+  --focus-ring: rgba(94, 168, 146, 0.45);
+  color-scheme: dark;
 }
 
 * {
@@ -35,11 +81,9 @@ body,
 body {
   margin: 0;
   min-width: 320px;
-  background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(47, 111, 94, 0.22), transparent 55%),
-    radial-gradient(900px 500px at 100% 0%, rgba(181, 107, 99, 0.18), transparent 50%),
-    linear-gradient(165deg, #d9e8e1 0%, #f3efe8 42%, #dfe8f0 100%);
+  background: var(--page-bg);
   background-attachment: fixed;
+  color: var(--ink);
 }
 
 button,
@@ -91,7 +135,7 @@ a {
   flex-wrap: wrap;
   gap: 0.4rem;
   padding: 0.35rem;
-  background: rgba(255, 252, 248, 0.55);
+  background: var(--tabs-bg);
   border: 1px solid var(--line);
   border-radius: 999px;
   backdrop-filter: blur(10px);
@@ -117,7 +161,7 @@ a {
 
 .tab.active {
   background: var(--ink);
-  color: #f7f3ee;
+  color: var(--tab-on-fg);
 }
 
 .badge {
@@ -128,7 +172,7 @@ a {
 }
 
 .tab:not(.active) .badge {
-  background: rgba(20, 34, 31, 0.08);
+  background: var(--pill-muted-bg);
 }
 
 .main {
@@ -208,7 +252,7 @@ a {
 .file-btn {
   appearance: none;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--control-bg);
   color: var(--ink);
   padding: 0.55rem 0.9rem;
   border-radius: 12px;
@@ -225,7 +269,7 @@ a {
 .btn-primary {
   background: linear-gradient(135deg, var(--accent), var(--accent-deep));
   border-color: transparent;
-  color: #f6fffb;
+  color: var(--btn-primary-fg);
 }
 
 .btn-ghost {
@@ -241,14 +285,14 @@ a {
   width: 100%;
   margin-top: 0.35rem;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.75);
+  background: var(--input-bg);
   border-radius: 12px;
   padding: 0.65rem 0.75rem;
   color: var(--ink);
 }
 
 .input:focus {
-  outline: 2px solid rgba(47, 111, 94, 0.35);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
 }
 
@@ -286,7 +330,7 @@ a {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--ink-soft);
-  background: rgba(231, 240, 236, 0.65);
+  background: var(--table-head-bg);
 }
 
 .center {
@@ -298,7 +342,7 @@ a {
   padding: 0.18rem 0.55rem;
   border-radius: 999px;
   font-size: 0.78rem;
-  background: rgba(20, 34, 31, 0.08);
+  background: var(--pill-muted-bg);
   text-transform: capitalize;
 }
 
@@ -323,7 +367,7 @@ a {
 }
 
 .pill-not_needed {
-  background: rgba(20, 34, 31, 0.06);
+  background: var(--pill-muted-bg);
 }
 
 .metrics {
@@ -337,8 +381,7 @@ a {
   padding: 1rem;
   border-radius: 16px;
   border: 1px solid var(--line);
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.7), rgba(231, 240, 236, 0.45));
+  background: var(--metric-bg);
   animation: rise 0.7s ease both;
 }
 
@@ -418,7 +461,7 @@ a {
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 0.55rem;
-  background: rgba(255, 255, 255, 0.45);
+  background: var(--recipient-bg);
 }
 
 .recipient {
@@ -475,7 +518,7 @@ a {
   width: min(720px, 100%);
   max-height: min(90vh, 900px);
   overflow: auto;
-  background: #fffdf9;
+  background: var(--modal-bg);
   border-radius: 18px;
   padding: 1.25rem;
   box-shadow: var(--shadow);

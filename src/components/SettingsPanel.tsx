@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
+import type { ThemeMode } from '../types'
 
 export function SettingsPanel() {
   const { data, updateSettings, exportBackup, importBackup, lock } = useApp()
@@ -17,7 +18,7 @@ export function SettingsPanel() {
         <div>
           <h2>Settings</h2>
           <p className="muted">
-            Wedding details, form links, EmailJS keys, backup, and optional PIN.
+            Wedding details, theme, form links, EmailJS keys, backup, and optional PIN.
           </p>
         </div>
         <button type="button" className="btn btn-primary" onClick={save}>
@@ -95,6 +96,22 @@ export function SettingsPanel() {
             value={s.appPin ?? ''}
             onChange={(e) => setS({ ...s, appPin: e.target.value })}
           />
+        </label>
+        <label>
+          Theme
+          <select
+            className="input"
+            value={s.theme ?? 'light'}
+            onChange={(e) => {
+              const theme: ThemeMode = e.target.value === 'dark' ? 'dark' : 'light'
+              const next = { ...s, theme }
+              setS(next)
+              updateSettings({ theme })
+            }}
+          >
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
         </label>
       </div>
 

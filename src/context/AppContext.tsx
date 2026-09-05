@@ -97,6 +97,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     persist(data)
   }, [data, persist])
 
+  useEffect(() => {
+    const mode = data.settings.theme === 'dark' ? 'dark' : 'light'
+    document.documentElement.setAttribute('data-theme', mode)
+  }, [data.settings.theme])
+
   const metrics = useMemo(() => computeMetrics(data.guests), [data.guests])
 
   const value = useMemo<AppContextValue>(

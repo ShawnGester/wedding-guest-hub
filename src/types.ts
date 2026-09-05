@@ -50,6 +50,8 @@ export interface EmailCampaign {
   lastSentAt?: string
 }
 
+export type ThemeMode = 'light' | 'dark'
+
 export interface AppSettings {
   coupleNames: string
   weddingDate: string
@@ -58,6 +60,7 @@ export interface AppSettings {
   addressFormUrl?: string
   /** Optional soft lock for shared computers */
   appPin?: string
+  theme: ThemeMode
   emailjs: {
     publicKey: string
     serviceId: string
@@ -75,12 +78,13 @@ export interface AppData {
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  coupleNames: 'Our Wedding',
+  coupleNames: 'Shawn and Mary\'s Wedding',
   weddingDate: '',
   venue: '',
   googleFormUrl: '',
   addressFormUrl: '',
   appPin: '',
+  theme: 'light',
   emailjs: {
     publicKey: '',
     serviceId: '',
