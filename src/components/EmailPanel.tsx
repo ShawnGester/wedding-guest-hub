@@ -13,10 +13,16 @@ const DEFAULT_BODY = `Dear {{firstName}},
 
 We're so excited to celebrate with you!
 
-Please save the date for {{coupleNames}}.
+Please save the date for {{coupleNames}} — {{weddingDate}}. Our wedding will take place in Vancouver, British Columbia, Canada, at {{venue}}.
 
 With love,
 {{coupleNames}}`
+
+const DEFAULT_BODY_HTML = `<p>Dear {{firstName}},</p>
+<p>We're so excited to celebrate with you!</p>
+<p>Please save the date for <strong>{{coupleNames}}</strong> — <strong>{{weddingDate}}</strong>.</p>
+<p>Our wedding will take place in <strong>Vancouver, British Columbia, Canada</strong>, at <strong>{{venue}}</strong>.</p>
+<p>With love,<br/>{{coupleNames}}</p>`
 
 const SAMPLE_GUEST: Guest = {
   id: 'preview-sample',
@@ -39,9 +45,7 @@ export function EmailPanel() {
     `Save the Date — ${data.settings.coupleNames || 'Our Wedding'}`,
   )
   const [bodyText, setBodyText] = useState(DEFAULT_BODY)
-  const [bodyHtml, setBodyHtml] = useState(
-    `<p>Dear {{firstName}},</p><p>We're so excited to celebrate with you!</p><p>Please save the date for <strong>{{coupleNames}}</strong>.</p><p>With love,<br/>{{coupleNames}}</p>`,
-  )
+  const [bodyHtml, setBodyHtml] = useState(DEFAULT_BODY_HTML)
   const [linkUrls, setLinkUrls] = useState<string[]>(
     data.settings.googleFormUrl ? [data.settings.googleFormUrl] : [''],
   )
@@ -235,7 +239,8 @@ export function EmailPanel() {
             />
           </label>
           <p className="tiny muted">
-            Tokens: <code>{'{{firstName}}'}</code>, <code>{'{{coupleNames}}'}</code>
+            Tokens: <code>{'{{firstName}}'}</code>, <code>{'{{coupleNames}}'}</code>,{' '}
+            <code>{'{{weddingDate}}'}</code>, <code>{'{{venue}}'}</code>
           </p>
 
           <div className="stack">

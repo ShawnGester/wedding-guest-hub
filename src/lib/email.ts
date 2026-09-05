@@ -6,6 +6,27 @@ export function emailjsConfigured(settings: AppSettings): boolean {
   return Boolean(publicKey && serviceId && templateId)
 }
 
+function formatWeddingDate(iso: string): string {
+  const raw = iso.trim()
+  if (!raw) return ''
+  const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(raw) ? `${raw}T12:00:00` : raw)
+  if (Number.isNaN(d.getTime())) return raw
+  return d.toLocaleDateString('en-CA', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+}
+
+function applyMessageTokens(template: string, settings: AppSettings, guest: Guest): string {
+  return template
+    .replaceAll('{{firstName}}', guest.firstName)
+    .replaceAll('{{coupleNames}}', settings.coupleNames)
+    .replaceAll('{{venue}}', settings.venue?.trim() || 'Furry Creek Golf & Country Club')
+    .replaceAll('{{weddingDate}}', formatWeddingDate(settings.weddingDate) || settings.weddingDate || '[wedding date]')
+}
+
 function attachmentsBlock(attachments: EmailAttachment[], links: string[]): string {
   const parts: string[] = []
   for (const a of attachments) {
@@ -35,15 +56,11 @@ export function buildSaveTheDateContent(
   },
 ): { subject: string; html: string; text: string; toEmail: string; toName: string; fromName: string } {
   const html =
-    opts.bodyHtml.replaceAll('{{firstName}}', guest.firstName).replaceAll(
-      '{{coupleNames}}',
-      settings.coupleNames,
-    ) + attachmentsBlock(opts.attachments, opts.linkUrls)
+    applyMessageTokens(opts.bodyHtml, settings, guest) +
+    attachmentsBlock(opts.attachments, opts.linkUrls)
 
   const text =
-    opts.bodyText
-      .replaceAll('{{firstName}}', guest.firstName)
-      .replaceAll('{{coupleNames}}', settings.coupleNames) +
+    applyMessageTokens(opts.bodyText, settings, guest) +
     (opts.linkUrls.length
       ? `\n\nLinks:\n${opts.linkUrls.map((u) => `- ${u}`).join('\n')}`
       : '')
@@ -103,8 +120,6 @@ export function mailtoDraft(
   bodyText: string,
   settings: AppSettings,
 ): string {
-  const body = bodyText
-    .replaceAll('{{firstName}}', guest.firstName)
-    .replaceAll('{{coupleNames}}', settings.coupleNames)
+  const body = applyMessageTokens(bodyText, settings, guest)
   return `mailto:${encodeURIComponent(guest.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
 }

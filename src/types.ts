@@ -80,7 +80,7 @@ export interface AppData {
 export const DEFAULT_SETTINGS: AppSettings = {
   coupleNames: 'Shawn and Mary',
   weddingDate: '',
-  venue: '',
+  venue: 'Furry Creek Golf & Country Club',
   googleFormUrl: '',
   addressFormUrl: '',
   appPin: '',
