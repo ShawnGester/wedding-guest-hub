@@ -33,7 +33,7 @@ const DEFAULT_BODY_HTML = `<p style="font-family:Georgia,serif;font-size:16px;li
 </p>
 <p style="font-family:Georgia,serif;font-size:14px;line-height:1.5;color:#3d4f4a;">(If the image doesn't load, Saturday, July 31, 2027 · Vancouver, BC · Furry Creek Golf &amp; Country Club)</p>
 <p style="margin:24px 0;">
-  <a href="${ACK_FORM_URL}" style="display:inline-block;background:#2f6f5e;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:8px;font-family:Georgia,serif;font-size:15px;">Please confirm you received this</a>
+  <a href="${ACK_FORM_URL}" style="display:inline-block;background:#2f6f5e;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:8px;font-family:Georgia,serif;font-size:15px;">Please Confirm You Received This!</a>
 </p>
 <p style="font-family:Georgia,serif;font-size:13px;line-height:1.45;color:#3d4f4a;">Or open: <a href="${ACK_FORM_URL}">${ACK_FORM_URL}</a></p>`
 
