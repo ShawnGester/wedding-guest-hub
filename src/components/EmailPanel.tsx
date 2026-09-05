@@ -299,7 +299,7 @@ export function EmailPanel() {
               </button>
             </div>
           </div>
-          <div className="recipient-list">
+          <div className="recipient-list" tabIndex={0} role="listbox" aria-label="Email recipients">
             {data.guests.map((g) => (
               <label key={g.id} className="check recipient">
                 <input
@@ -315,12 +315,12 @@ export function EmailPanel() {
                     })
                   }}
                 />
-                <span>
-                  {g.firstName} {g.lastName}
-                  <span className="tiny muted">
-                    {' '}
-                    · {g.email || 'no email'} · {g.saveTheDateStatus}
+                <span className="recipient-meta">
+                  <span className="recipient-name">
+                    {g.firstName} {g.lastName}
+                    <span className="tiny muted"> · {g.saveTheDateStatus}</span>
                   </span>
+                  <span className="recipient-email tiny muted">{g.email || 'no email'}</span>
                 </span>
               </label>
             ))}

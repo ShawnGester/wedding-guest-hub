@@ -456,17 +456,49 @@ a {
 }
 
 .recipient-list {
-  max-height: 360px;
-  overflow: auto;
+  max-height: min(360px, 45vh);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
   border: 1px solid var(--line);
   border-radius: 14px;
-  padding: 0.55rem;
+  padding: 0.35rem;
   background: var(--recipient-bg);
+  -webkit-overflow-scrolling: touch;
+}
+
+.recipient-list:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
 }
 
 .recipient {
-  padding: 0.35rem 0.4rem;
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.45rem 0.5rem;
   border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.recipient-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.recipient-name {
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.recipient-email {
+  display: block;
+  color: var(--ink-soft);
+  word-break: break-all;
+  line-height: 1.3;
 }
 
 .recipient:hover {
