@@ -1,8 +1,13 @@
 import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { emailjsConfigured, mailtoDraft, sendSaveTheDate } from '../lib/email'
+import {
+  buildSaveTheDateContent,
+  emailjsConfigured,
+  mailtoDraft,
+  sendSaveTheDate,
+} from '../lib/email'
 import { uid } from '../lib/id'
-import type { EmailAttachment, EmailCampaign } from '../types'
+import type { EmailAttachment, EmailCampaign, Guest } from '../types'
 
 const DEFAULT_BODY = `Dear {{firstName}},
 
@@ -12,6 +17,21 @@ Please save the date for {{coupleNames}}.
 
 With love,
 {{coupleNames}}`
+
+const SAMPLE_GUEST: Guest = {
+  id: 'preview-sample',
+  firstName: 'Alex',
+  lastName: 'Guest',
+  email: 'alex.guest@example.com',
+  partySize: 1,
+  tags: [],
+  rsvpStatus: 'unknown',
+  physicalInvite: false,
+  addressStatus: 'not_needed',
+  saveTheDateStatus: 'not_sent',
+  createdAt: '',
+  updatedAt: '',
+}
 
 export function EmailPanel() {
   const { data, saveCampaign, deleteCampaign, markSaveTheDateSent, metrics } = useApp()
@@ -36,10 +56,26 @@ export function EmailPanel() {
   )
   const [status, setStatus] = useState('')
   const [sending, setSending] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
+  const [previewAsText, setPreviewAsText] = useState(false)
 
   const recipients = useMemo(
     () => data.guests.filter((g) => selected.has(g.id) && g.email.trim()),
     [data.guests, selected],
+  )
+
+  const previewGuest = recipients[0] ?? data.guests.find((g) => g.email.trim()) ?? SAMPLE_GUEST
+
+  const preview = useMemo(
+    () =>
+      buildSaveTheDateContent(data.settings, previewGuest, {
+        subject,
+        bodyHtml,
+        bodyText,
+        attachments,
+        linkUrls: linkUrls.filter(Boolean),
+      }),
+    [data.settings, previewGuest, subject, bodyHtml, bodyText, attachments, linkUrls],
   )
 
   const configured = emailjsConfigured(data.settings)
@@ -144,6 +180,9 @@ export function EmailPanel() {
           </p>
         </div>
         <div className="row gap">
+          <button type="button" className="btn" onClick={() => setShowPreview(true)}>
+            Preview
+          </button>
           <button type="button" className="btn" onClick={() => persistCampaign()}>
             Save draft
           </button>
@@ -368,6 +407,81 @@ export function EmailPanel() {
           ) : null}
         </div>
       </div>
+
+      {showPreview ? (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onClick={() => setShowPreview(false)}
+        >
+          <div
+            className="modal email-preview-modal"
+            role="dialog"
+            aria-labelledby="email-preview-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="panel-head">
+              <div>
+                <h2 id="email-preview-title">Email preview</h2>
+                <p className="muted tiny">
+                  Shown as it would send to{' '}
+                  <strong>
+                    {preview.toName || 'Guest'}
+                    {preview.toEmail ? ` <${preview.toEmail}>` : ' (sample)'}
+                  </strong>
+                  . Uses the first selected recipient when available.
+                </p>
+              </div>
+              <div className="row gap">
+                <button
+                  type="button"
+                  className={`btn ${previewAsText ? '' : 'btn-primary'}`}
+                  onClick={() => setPreviewAsText(false)}
+                >
+                  HTML
+                </button>
+                <button
+                  type="button"
+                  className={`btn ${previewAsText ? 'btn-primary' : ''}`}
+                  onClick={() => setPreviewAsText(true)}
+                >
+                  Plain text
+                </button>
+                <button type="button" className="btn" onClick={() => setShowPreview(false)}>
+                  Close
+                </button>
+              </div>
+            </header>
+
+            <div className="email-preview-meta">
+              <div>
+                <span className="tiny muted">From</span>
+                <div>{preview.fromName || '—'}</div>
+              </div>
+              <div>
+                <span className="tiny muted">To</span>
+                <div>
+                  {preview.toName}
+                  {preview.toEmail ? ` · ${preview.toEmail}` : ''}
+                </div>
+              </div>
+              <div>
+                <span className="tiny muted">Subject</span>
+                <div>{preview.subject || '(no subject)'}</div>
+              </div>
+            </div>
+
+            {previewAsText ? (
+              <pre className="email-preview-text">{preview.text}</pre>
+            ) : (
+              <div
+                className="email-preview-html"
+                dangerouslySetInnerHTML={{ __html: preview.html }}
+              />
+            )}
+          </div>
+        </div>
+      ) : null}
     </section>
   )
 }

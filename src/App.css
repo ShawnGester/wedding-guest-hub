@@ -557,6 +557,51 @@ a {
   animation: rise 0.25s ease;
 }
 
+.email-preview-modal {
+  width: min(640px, 100%);
+}
+
+.email-preview-meta {
+  display: grid;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.email-preview-html {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--input-bg);
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.email-preview-html a {
+  color: var(--accent);
+}
+
+.email-preview-html img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.email-preview-text {
+  margin: 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--input-bg);
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
 .lock-screen {
   min-height: 100vh;
   display: grid;

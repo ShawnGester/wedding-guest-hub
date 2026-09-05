@@ -23,6 +23,41 @@ function attachmentsBlock(attachments: EmailAttachment[], links: string[]): stri
   return `<p><strong>Links &amp; attachments</strong></p><ul>${parts.join('')}</ul>`
 }
 
+export function buildSaveTheDateContent(
+  settings: AppSettings,
+  guest: Guest,
+  opts: {
+    subject: string
+    bodyHtml: string
+    bodyText: string
+    attachments: EmailAttachment[]
+    linkUrls: string[]
+  },
+): { subject: string; html: string; text: string; toEmail: string; toName: string; fromName: string } {
+  const html =
+    opts.bodyHtml.replaceAll('{{firstName}}', guest.firstName).replaceAll(
+      '{{coupleNames}}',
+      settings.coupleNames,
+    ) + attachmentsBlock(opts.attachments, opts.linkUrls)
+
+  const text =
+    opts.bodyText
+      .replaceAll('{{firstName}}', guest.firstName)
+      .replaceAll('{{coupleNames}}', settings.coupleNames) +
+    (opts.linkUrls.length
+      ? `\n\nLinks:\n${opts.linkUrls.map((u) => `- ${u}`).join('\n')}`
+      : '')
+
+  return {
+    subject: opts.subject,
+    html,
+    text,
+    toEmail: guest.email,
+    toName: `${guest.firstName} ${guest.lastName}`.trim(),
+    fromName: settings.fromName || settings.coupleNames,
+  }
+}
+
 export async function sendSaveTheDate(
   settings: AppSettings,
   guest: Guest,
@@ -41,31 +76,19 @@ export async function sendSaveTheDate(
     throw new Error(`${guest.firstName} has no email address.`)
   }
 
-  const html =
-    opts.bodyHtml.replaceAll('{{firstName}}', guest.firstName).replaceAll(
-      '{{coupleNames}}',
-      settings.coupleNames,
-    ) + attachmentsBlock(opts.attachments, opts.linkUrls)
-
-  const text =
-    opts.bodyText
-      .replaceAll('{{firstName}}', guest.firstName)
-      .replaceAll('{{coupleNames}}', settings.coupleNames) +
-    (opts.linkUrls.length
-      ? `\n\nLinks:\n${opts.linkUrls.map((u) => `- ${u}`).join('\n')}`
-      : '')
+  const content = buildSaveTheDateContent(settings, guest, opts)
 
   await emailjs.send(
     settings.emailjs.serviceId,
     settings.emailjs.templateId,
     {
-      to_email: guest.email,
-      to_name: `${guest.firstName} ${guest.lastName}`.trim(),
-      from_name: settings.fromName || settings.coupleNames,
+      to_email: content.toEmail,
+      to_name: content.toName,
+      from_name: content.fromName,
       reply_to: settings.replyToEmail,
-      subject: opts.subject,
-      message_html: html,
-      message: text,
+      subject: content.subject,
+      message_html: content.html,
+      message: content.text,
       couple_names: settings.coupleNames,
       wedding_date: settings.weddingDate,
     },
