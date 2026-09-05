@@ -73,8 +73,9 @@ export function Dashboard() {
         <ol>
           <li>Add guests (or import a spreadsheet) and mark who gets a physical invite.</li>
           <li>
-            Share your Google intake form; periodically export responses as CSV and import
-            here to mark RSVPs / addresses.
+            Export your guest spreadsheet and import here to sync the list exactly (add /
+            update / remove). Google Form CSVs work the same — only people in that file stay
+            on the list.
           </li>
           <li>
             Compose save-the-dates with links or light attachments, connect free EmailJS, and

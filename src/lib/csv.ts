@@ -72,12 +72,20 @@ export type MergeRsvpResult = {
   guests: Guest[]
   matched: number
   created: number
+  removed: number
+}
+
+function parseBool(v: string): boolean | undefined {
+  const s = v.trim().toLowerCase()
+  if (!s) return undefined
+  if (['true', '1', 'yes', 'y'].includes(s)) return true
+  if (['false', '0', 'no', 'n'].includes(s)) return false
+  return undefined
 }
 
 /**
- * Import Google Form (or any) CSV: update matched guests, create guests for
- * unmatched rows. Matches by email first, then by full name. Existing guests
- * not in the CSV are left unchanged.
+ * Sync guests to the spreadsheet exactly: update matches, add new CSV rows,
+ * remove site guests not present in the CSV. Match by email, then full name.
  */
 export function mergeRsvpCsv(
   guests: Guest[],
@@ -85,13 +93,14 @@ export function mergeRsvpCsv(
   mode: 'rsvp' | 'address' = 'rsvp',
 ): MergeRsvpResult {
   const { headers, rows } = parseCsv(csvText)
-  if (!headers.length) return { guests, matched: 0, created: 0 }
+  if (!headers.length) return { guests, matched: 0, created: 0, removed: 0 }
 
   const normHeaders = headers.map(normalizeHeader)
   let matched = 0
   let created = 0
-  const next = [...guests]
   const now = new Date().toISOString()
+  const available = [...guests]
+  const synced: Guest[] = []
 
   for (const row of rows) {
     const map: Record<string, string> = {}
@@ -115,36 +124,75 @@ export function mergeRsvpCsv(
       'streetaddress',
       'fulladdress',
     ])
+    const phone = pick(map, ['phone', 'phonenumber', 'mobile'])
+    const household = pick(map, ['household', 'party', 'family'])
+    const notes = pick(map, ['notes', 'note', 'comments'])
+    const tagsRaw = pick(map, ['tags', 'tag'])
+    const partyRaw = pick(map, ['partysize', 'guests', 'headcount'])
+    const physicalRaw = pick(map, ['physicalinvite', 'physical'])
+    const rsvpRaw = pick(map, ['rsvpstatus', 'rsvp'])
+    const addressStatusRaw = pick(map, ['addressstatus'])
+    const stdRaw = pick(map, ['savethedatestatus', 'stdstatus'])
 
     if (!email && !firstName) continue
 
-    const idx = findGuestIndex(next, email, firstName, lastName)
+    const idx = findGuestIndex(available, email, firstName, lastName)
+    const partySize = partyRaw ? Math.max(1, Number.parseInt(partyRaw, 10) || 1) : undefined
+    const physicalInvite = parseBool(physicalRaw)
+    const tags = tagsRaw
+      ? tagsRaw
+          .split(/[;,]/)
+          .map((t) => t.trim())
+          .filter(Boolean)
+      : undefined
+
     if (idx === -1) {
       const guest: Guest = {
         id: uid('guest'),
         firstName,
         lastName,
         email,
-        partySize: 1,
-        tags: [],
-        rsvpStatus: mode === 'rsvp' ? 'submitted' : 'unknown',
-        rsvpSubmittedAt: mode === 'rsvp' ? now : undefined,
-        physicalInvite: mode === 'address',
-        addressStatus: mode === 'address' ? 'submitted' : 'not_needed',
+        phone: phone || undefined,
+        household: household || undefined,
+        partySize: partySize ?? 1,
+        tags: tags ?? [],
+        notes: notes || undefined,
+        rsvpStatus: (rsvpRaw as RsvpStatus) || (mode === 'rsvp' ? 'submitted' : 'unknown'),
+        rsvpSubmittedAt: mode === 'rsvp' || rsvpRaw === 'submitted' ? now : undefined,
+        physicalInvite: physicalInvite ?? mode === 'address',
+        addressStatus:
+          (addressStatusRaw as Guest['addressStatus']) ||
+          (mode === 'address' ? 'submitted' : 'not_needed'),
         mailingAddress: address || undefined,
-        addressSubmittedAt: mode === 'address' ? now : undefined,
-        saveTheDateStatus: 'not_sent',
+        addressSubmittedAt: mode === 'address' || addressStatusRaw === 'submitted' ? now : undefined,
+        saveTheDateStatus: (stdRaw as Guest['saveTheDateStatus']) || 'not_sent',
         createdAt: now,
         updatedAt: now,
       }
-      next.push(guest)
+      synced.push(guest)
       created++
       continue
     }
 
-    const g = { ...next[idx] }
+    const prev = available[idx]
+    available.splice(idx, 1)
+    const g: Guest = { ...prev }
+    g.firstName = firstName || g.firstName
+    g.lastName = lastName || g.lastName
+    if (email) g.email = email
+    if (phone) g.phone = phone
+    if (household) g.household = household
+    if (notes) g.notes = notes
+    if (tags) g.tags = tags
+    if (partySize != null) g.partySize = partySize
+    if (physicalInvite != null) g.physicalInvite = physicalInvite
+    if (address) g.mailingAddress = address
+    if (rsvpRaw) g.rsvpStatus = rsvpRaw as RsvpStatus
+    if (addressStatusRaw) g.addressStatus = addressStatusRaw as Guest['addressStatus']
+    if (stdRaw) g.saveTheDateStatus = stdRaw as Guest['saveTheDateStatus']
+
     if (mode === 'rsvp') {
-      g.rsvpStatus = 'submitted' as RsvpStatus
+      g.rsvpStatus = 'submitted'
       g.rsvpSubmittedAt = now
     } else {
       g.physicalInvite = true
@@ -152,14 +200,13 @@ export function mergeRsvpCsv(
       g.addressSubmittedAt = now
       if (address) g.mailingAddress = address
     }
-    // Fill blank email from CSV when matched by name
-    if (email && !g.email.trim()) g.email = email
     g.updatedAt = now
-    next[idx] = g
+    synced.push(g)
     matched++
   }
 
-  return { guests: next, matched, created }
+  const removed = available.length
+  return { guests: synced, matched, created, removed }
 }
 
 /** Column order shared by export + blank intake template (matches import aliases). */

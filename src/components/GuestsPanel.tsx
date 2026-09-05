@@ -38,7 +38,7 @@ export function GuestsPanel() {
     const text = await file.text()
     const result = importRsvpCsv(text, mode)
     setImportMsg(
-      `Imported ${mode}: ${result.matched} matched, ${result.created} created.`,
+      `Synced ${mode}: ${result.matched} updated, ${result.created} added, ${result.removed} removed.`,
     )
   }
 
@@ -93,7 +93,7 @@ export function GuestsPanel() {
           Download guest CSV template
         </button>
         <label className="file-btn">
-          Import Google RSVP CSV
+          Sync from Google RSVP CSV
           <input
             type="file"
             accept=".csv,text/csv"
@@ -106,7 +106,7 @@ export function GuestsPanel() {
           />
         </label>
         <label className="file-btn">
-          Import address intake CSV
+          Sync from address intake CSV
           <input
             type="file"
             accept=".csv,text/csv"

@@ -41,7 +41,11 @@ interface AppContextValue {
   addGuest: (partial?: Partial<Guest>) => Guest
   updateGuest: (id: string, patch: Partial<Guest>) => void
   deleteGuest: (id: string) => void
-  importRsvpCsv: (csv: string, mode: 'rsvp' | 'address') => { matched: number; created: number }
+  importRsvpCsv: (csv: string, mode: 'rsvp' | 'address') => {
+    matched: number
+    created: number
+    removed: number
+  }
   exportGuestsCsv: () => void
   downloadGuestCsvTemplate: () => void
   exportBackup: () => void
@@ -159,10 +163,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setData((d) => ({ ...d, guests: d.guests.filter((g) => g.id !== id) }))
       },
       importRsvpCsv: (csv, mode) => {
-        let result = { matched: 0, created: 0 }
+        let result = { matched: 0, created: 0, removed: 0 }
         setData((d) => {
           const merged = mergeRsvpCsv(d.guests, csv, mode)
-          result = { matched: merged.matched, created: merged.created }
+          result = {
+            matched: merged.matched,
+            created: merged.created,
+            removed: merged.removed,
+          }
           return { ...d, guests: merged.guests }
         })
         return result
