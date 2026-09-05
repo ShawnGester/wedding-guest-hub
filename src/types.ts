@@ -78,7 +78,7 @@ export interface AppData {
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  coupleNames: 'Shawn and Mary\'s Wedding',
+  coupleNames: 'Shawn and Mary',
   weddingDate: '',
   venue: '',
   googleFormUrl: '',

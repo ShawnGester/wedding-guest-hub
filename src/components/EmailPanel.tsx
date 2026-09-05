@@ -10,7 +10,8 @@ We're so excited to celebrate with you!
 
 Please save the date for {{coupleNames}}.
 
-With love`
+With love,
+{{coupleNames}}`
 
 export function EmailPanel() {
   const { data, saveCampaign, deleteCampaign, markSaveTheDateSent, metrics } = useApp()
@@ -19,7 +20,7 @@ export function EmailPanel() {
   )
   const [bodyText, setBodyText] = useState(DEFAULT_BODY)
   const [bodyHtml, setBodyHtml] = useState(
-    `<p>Dear {{firstName}},</p><p>We're so excited to celebrate with you!</p><p>Please save the date for <strong>{{coupleNames}}</strong>.</p><p>With love</p>`,
+    `<p>Dear {{firstName}},</p><p>We're so excited to celebrate with you!</p><p>Please save the date for <strong>{{coupleNames}}</strong>.</p><p>With love,<br/>{{coupleNames}}</p>`,
   )
   const [linkUrls, setLinkUrls] = useState<string[]>(
     data.settings.googleFormUrl ? [data.settings.googleFormUrl] : [''],
