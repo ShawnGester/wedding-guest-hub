@@ -23,6 +23,9 @@ export interface Guest {
   /** Save the date email track */
   saveTheDateStatus: SaveTheDateStatus
   saveTheDateSentAt?: string
+  /** Guest confirmed they received the save-the-date (via ack form) */
+  saveTheDateAcknowledged: boolean
+  saveTheDateAcknowledgedAt?: string
   createdAt: string
   updatedAt: string
 }
@@ -54,10 +57,17 @@ export type ThemeMode = 'light' | 'dark'
 
 export interface AppSettings {
   coupleNames: string
-  weddingDate: string
-  venue?: string
   googleFormUrl?: string
   addressFormUrl?: string
+  /** Google Form: confirm save-the-date received */
+  saveTheDateAckFormUrl?: string
+  /**
+   * Public CSV feed of form responses (Google Apps Script web app URL recommended).
+   * Used by “Refresh acks from Google”.
+   */
+  saveTheDateAckResponsesUrl?: string
+  /** When set, Guests tab refreshes acks from the feed on open */
+  saveTheDateAckAutoRefresh?: boolean
   /** Optional soft lock for shared computers */
   appPin?: string
   theme: ThemeMode
@@ -79,10 +89,11 @@ export interface AppData {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   coupleNames: 'Shawn and Mary',
-  weddingDate: '',
-  venue: 'Furry Creek Golf & Country Club',
   googleFormUrl: '',
   addressFormUrl: '',
+  saveTheDateAckFormUrl: 'https://forms.gle/1t4K36a7Kwcoh6EE7',
+  saveTheDateAckResponsesUrl: '',
+  saveTheDateAckAutoRefresh: true,
   appPin: '',
   theme: 'light',
   emailjs: {

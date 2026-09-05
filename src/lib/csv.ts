@@ -166,6 +166,7 @@ export function mergeRsvpCsv(
         mailingAddress: address || undefined,
         addressSubmittedAt: mode === 'address' || addressStatusRaw === 'submitted' ? now : undefined,
         saveTheDateStatus: (stdRaw as Guest['saveTheDateStatus']) || 'not_sent',
+        saveTheDateAcknowledged: false,
         createdAt: now,
         updatedAt: now,
       }
@@ -209,6 +210,70 @@ export function mergeRsvpCsv(
   return { guests: synced, matched, created, removed }
 }
 
+export type MergeAckResult = {
+  guests: Guest[]
+  matched: number
+  unmatched: number
+}
+
+function pickEmailFromRow(map: Record<string, string>): string {
+  const exact = pick(map, ['email', 'emailaddress', 'e-mail', 'emailaddress'])
+  if (exact) return exact.trim().toLowerCase()
+
+  // Google Forms uses the full question text as the CSV header, e.g.
+  // "Just to confirm, what is your email (the one we sent our email to)?"
+  for (const [key, value] of Object.entries(map)) {
+    if (key.includes('email') && value.trim()) {
+      return value.trim().toLowerCase()
+    }
+  }
+  return ''
+}
+
+/**
+ * Mark save-the-date acknowledgements from a Google Form CSV.
+ * Matches by email only. Does not remove guests who haven't responded yet.
+ */
+export function mergeAckCsv(guests: Guest[], csvText: string): MergeAckResult {
+  const { headers, rows } = parseCsv(csvText)
+  if (!headers.length) return { guests, matched: 0, unmatched: 0 }
+
+  const normHeaders = headers.map(normalizeHeader)
+  const next = guests.map((g) => ({ ...g }))
+  let matched = 0
+  let unmatched = 0
+  const now = new Date().toISOString()
+
+  for (const row of rows) {
+    const map: Record<string, string> = {}
+    normHeaders.forEach((h, i) => {
+      map[h] = row[i] ?? ''
+    })
+
+    const email = pickEmailFromRow(map)
+    if (!email) {
+      unmatched++
+      continue
+    }
+
+    const idx = next.findIndex((g) => g.email.trim().toLowerCase() === email)
+    if (idx === -1) {
+      unmatched++
+      continue
+    }
+
+    next[idx] = {
+      ...next[idx],
+      saveTheDateAcknowledged: true,
+      saveTheDateAcknowledgedAt: now,
+      updatedAt: now,
+    }
+    matched++
+  }
+
+  return { guests: next, matched, unmatched }
+}
+
 /** Column order shared by export + blank intake template (matches import aliases). */
 export const GUEST_CSV_HEADERS = [
   'firstName',
@@ -223,6 +288,7 @@ export const GUEST_CSV_HEADERS = [
   'addressStatus',
   'mailingAddress',
   'saveTheDateStatus',
+  'saveTheDateAcknowledged',
   'notes',
 ] as const
 
@@ -243,6 +309,7 @@ function guestRow(g: {
   addressStatus: string
   mailingAddress?: string
   saveTheDateStatus: string
+  saveTheDateAcknowledged?: boolean
   notes?: string
 }): string {
   return [
@@ -258,6 +325,7 @@ function guestRow(g: {
     g.addressStatus,
     g.mailingAddress ?? '',
     g.saveTheDateStatus,
+    String(Boolean(g.saveTheDateAcknowledged)),
     g.notes ?? '',
   ]
     .map(escapeCsv)
@@ -281,6 +349,7 @@ export function guestCsvTemplate(): string {
       addressStatus: 'not_needed',
       mailingAddress: '',
       saveTheDateStatus: 'not_sent',
+      saveTheDateAcknowledged: false,
       notes: 'EXAMPLE – delete me',
     }),
   ].join('\n')

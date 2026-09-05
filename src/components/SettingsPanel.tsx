@@ -18,7 +18,7 @@ export function SettingsPanel() {
         <div>
           <h2>Settings</h2>
           <p className="muted">
-            Wedding details, theme, form links, EmailJS keys, backup, and optional PIN.
+            Brand name, theme, form links, EmailJS keys, backup, and optional PIN.
           </p>
         </div>
         <button type="button" className="btn btn-primary" onClick={save}>
@@ -37,23 +37,6 @@ export function SettingsPanel() {
             onChange={(e) => setS({ ...s, coupleNames: e.target.value })}
           />
         </label>
-        <label>
-          Wedding date
-          <input
-            className="input"
-            type="date"
-            value={s.weddingDate}
-            onChange={(e) => setS({ ...s, weddingDate: e.target.value })}
-          />
-        </label>
-        <label className="span-2">
-          Venue
-          <input
-            className="input"
-            value={s.venue ?? ''}
-            onChange={(e) => setS({ ...s, venue: e.target.value })}
-          />
-        </label>
         <label className="span-2">
           Google RSVP / intake form URL
           <input
@@ -70,6 +53,36 @@ export function SettingsPanel() {
             onChange={(e) => setS({ ...s, addressFormUrl: e.target.value })}
           />
         </label>
+        <label className="span-2">
+          Save-the-date acknowledgement form URL
+          <input
+            className="input"
+            value={s.saveTheDateAckFormUrl ?? ''}
+            onChange={(e) => setS({ ...s, saveTheDateAckFormUrl: e.target.value })}
+          />
+        </label>
+        <label className="span-2">
+          Ack responses feed URL (auto-import)
+          <input
+            className="input mono"
+            placeholder="https://script.google.com/macros/s/…/exec"
+            value={s.saveTheDateAckResponsesUrl ?? ''}
+            onChange={(e) => setS({ ...s, saveTheDateAckResponsesUrl: e.target.value })}
+          />
+        </label>
+        <label className="check span-2">
+          <input
+            type="checkbox"
+            checked={Boolean(s.saveTheDateAckAutoRefresh)}
+            onChange={(e) => setS({ ...s, saveTheDateAckAutoRefresh: e.target.checked })}
+          />
+          Auto-refresh acknowledgements when opening Guests
+        </label>
+        <p className="muted tiny span-2">
+          Link the form to a Sheet, then deploy <code>scripts/google-ack-webapp.gs</code> as a
+          Google Apps Script web app (Anyone). Paste that URL above. Direct Google Sheet CSV
+          links often fail in the browser due to CORS.
+        </p>
         <label>
           From name
           <input

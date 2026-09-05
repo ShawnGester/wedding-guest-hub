@@ -7,7 +7,7 @@ import {
   useEffectEvent,
   type ReactNode,
 } from 'react'
-import { guestCsvTemplate, guestsToCsv, mergeRsvpCsv } from '../lib/csv'
+import { guestCsvTemplate, guestsToCsv, mergeAckCsv, mergeRsvpCsv } from '../lib/csv'
 import { uid } from '../lib/id'
 import { downloadJson, downloadText, loadData, saveData } from '../storage'
 import type {
@@ -29,6 +29,7 @@ interface Metrics {
   addressSubmitted: number
   saveTheDateSent: number
   saveTheDatePending: number
+  saveTheDateAcknowledged: number
 }
 
 interface AppContextValue {
@@ -46,6 +47,8 @@ interface AppContextValue {
     created: number
     removed: number
   }
+  importAckCsv: (csv: string) => { matched: number; unmatched: number }
+  refreshAcksFromFeed: () => Promise<{ matched: number; unmatched: number }>
   exportGuestsCsv: () => void
   downloadGuestCsvTemplate: () => void
   exportBackup: () => void
@@ -74,6 +77,7 @@ function computeMetrics(guests: Guest[]): Metrics {
   const saveTheDatePending = guests.filter(
     (g) => g.email.trim() && g.saveTheDateStatus !== 'sent',
   ).length
+  const saveTheDateAcknowledged = guests.filter((g) => g.saveTheDateAcknowledged).length
   return {
     totalGuests,
     totalParty,
@@ -86,6 +90,7 @@ function computeMetrics(guests: Guest[]): Metrics {
     addressSubmitted,
     saveTheDateSent,
     saveTheDatePending,
+    saveTheDateAcknowledged,
   }
 }
 
@@ -144,6 +149,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           physicalInvite: false,
           addressStatus: 'not_needed',
           saveTheDateStatus: 'not_sent',
+          saveTheDateAcknowledged: false,
           createdAt: now,
           updatedAt: now,
           ...partial,
@@ -171,6 +177,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
             created: merged.created,
             removed: merged.removed,
           }
+          return { ...d, guests: merged.guests }
+        })
+        return result
+      },
+      importAckCsv: (csv) => {
+        let result = { matched: 0, unmatched: 0 }
+        setData((d) => {
+          const merged = mergeAckCsv(d.guests, csv)
+          result = { matched: merged.matched, unmatched: merged.unmatched }
+          return { ...d, guests: merged.guests }
+        })
+        return result
+      },
+      refreshAcksFromFeed: async () => {
+        const url = data.settings.saveTheDateAckResponsesUrl?.trim()
+        if (!url) {
+          throw new Error(
+            'Add an Ack responses feed URL in Settings (Google Apps Script web app).',
+          )
+        }
+        const res = await fetch(url)
+        if (!res.ok) {
+          throw new Error(`Could not fetch ack feed (${res.status}). Check the URL and sharing.`)
+        }
+        const text = await res.text()
+        if (!text.trim()) {
+          throw new Error('Ack feed was empty.')
+        }
+        let result = { matched: 0, unmatched: 0 }
+        setData((d) => {
+          const merged = mergeAckCsv(d.guests, text)
+          result = { matched: merged.matched, unmatched: merged.unmatched }
           return { ...d, guests: merged.guests }
         })
         return result

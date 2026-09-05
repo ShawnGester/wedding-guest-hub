@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import type { AddressStatus, Guest, RsvpStatus, SaveTheDateStatus } from '../types'
 
-type Filter = 'all' | 'missing_rsvp' | 'physical' | 'no_email' | 'std_pending'
+type Filter = 'all' | 'missing_rsvp' | 'physical' | 'no_email' | 'std_pending' | 'ack_pending'
 
 export function GuestsPanel() {
   const {
@@ -11,6 +11,8 @@ export function GuestsPanel() {
     updateGuest,
     deleteGuest,
     importRsvpCsv,
+    importAckCsv,
+    refreshAcksFromFeed,
     exportGuestsCsv,
     downloadGuestCsvTemplate,
   } = useApp()
@@ -18,6 +20,7 @@ export function GuestsPanel() {
   const [filter, setFilter] = useState<Filter>('all')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [importMsg, setImportMsg] = useState('')
+  const [ackRefreshing, setAckRefreshing] = useState(false)
 
   const guests = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -26,6 +29,7 @@ export function GuestsPanel() {
       if (filter === 'physical' && !g.physicalInvite) return false
       if (filter === 'no_email' && g.email.trim()) return false
       if (filter === 'std_pending' && g.saveTheDateStatus === 'sent') return false
+      if (filter === 'ack_pending' && g.saveTheDateAcknowledged) return false
       if (!q) return true
       const hay = `${g.firstName} ${g.lastName} ${g.email} ${g.household ?? ''} ${g.tags.join(' ')}`.toLowerCase()
       return hay.includes(q)
@@ -33,12 +37,43 @@ export function GuestsPanel() {
   }, [data.guests, query, filter])
 
   const editing = data.guests.find((g) => g.id === editingId) ?? null
+  const hasAckFeed = Boolean(data.settings.saveTheDateAckResponsesUrl?.trim())
+
+  async function refreshAcks() {
+    setAckRefreshing(true)
+    try {
+      const result = await refreshAcksFromFeed()
+      setImportMsg(
+        `Acknowledgements refreshed: ${result.matched} marked received, ${result.unmatched} unmatched skipped.`,
+      )
+    } catch (err) {
+      setImportMsg(err instanceof Error ? err.message : 'Ack refresh failed')
+    } finally {
+      setAckRefreshing(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!data.settings.saveTheDateAckAutoRefresh) return
+    if (!data.settings.saveTheDateAckResponsesUrl?.trim()) return
+    void refreshAcks()
+    // Intentionally once when opening Guests with auto-refresh enabled.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function onImportFile(file: File, mode: 'rsvp' | 'address') {
     const text = await file.text()
     const result = importRsvpCsv(text, mode)
     setImportMsg(
       `Synced ${mode}: ${result.matched} updated, ${result.created} added, ${result.removed} removed.`,
+    )
+  }
+
+  async function onImportAck(file: File) {
+    const text = await file.text()
+    const result = importAckCsv(text)
+    setImportMsg(
+      `Acknowledgements: ${result.matched} marked received, ${result.unmatched} unmatched rows skipped.`,
     )
   }
 
@@ -85,6 +120,7 @@ export function GuestsPanel() {
           <option value="physical">Physical invites</option>
           <option value="no_email">Missing email</option>
           <option value="std_pending">Save-the-date pending</option>
+          <option value="ack_pending">Save-the-date not acknowledged</option>
         </select>
       </div>
 
@@ -118,6 +154,32 @@ export function GuestsPanel() {
             }}
           />
         </label>
+        <label className="file-btn">
+          Sync save-the-date ack CSV
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            hidden
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              if (f) void onImportAck(f)
+              e.target.value = ''
+            }}
+          />
+        </label>
+        <button
+          type="button"
+          className="btn"
+          disabled={!hasAckFeed || ackRefreshing}
+          onClick={() => void refreshAcks()}
+          title={
+            hasAckFeed
+              ? 'Fetch acknowledgements from the Settings feed URL'
+              : 'Set Ack responses feed URL in Settings first'
+          }
+        >
+          {ackRefreshing ? 'Refreshing acks…' : 'Refresh acks from Google'}
+        </button>
         {importMsg ? <span className="muted">{importMsg}</span> : null}
       </div>
 
@@ -131,6 +193,7 @@ export function GuestsPanel() {
               <th>Physical</th>
               <th>Address</th>
               <th>Save the date</th>
+              <th>Ack</th>
               <th />
             </tr>
           </thead>
@@ -154,6 +217,13 @@ export function GuestsPanel() {
                 <td>
                   <StatusPill value={g.saveTheDateStatus} />
                 </td>
+                <td>
+                  {g.saveTheDateAcknowledged ? (
+                    <span className="pill pill-submitted">Received</span>
+                  ) : (
+                    <span className="pill pill-pending">Pending</span>
+                  )}
+                </td>
                 <td className="row gap end">
                   <button type="button" className="btn btn-ghost" onClick={() => setEditingId(g.id)}>
                     Edit
@@ -172,7 +242,7 @@ export function GuestsPanel() {
             ))}
             {!guests.length ? (
               <tr>
-                <td colSpan={7} className="muted center">
+                <td colSpan={8} className="muted center">
                   No guests match this view. Add someone or clear filters.
                 </td>
               </tr>
@@ -361,6 +431,23 @@ function GuestEditor({
               <option value="sent">Sent</option>
               <option value="failed">Failed</option>
             </select>
+          </label>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={Boolean(draft.saveTheDateAcknowledged)}
+              onChange={(e) => {
+                const on = e.target.checked
+                setDraft((d) => ({
+                  ...d,
+                  saveTheDateAcknowledged: on,
+                  saveTheDateAcknowledgedAt: on
+                    ? d.saveTheDateAcknowledgedAt || new Date().toISOString()
+                    : undefined,
+                }))
+              }}
+            />
+            Acknowledged received
           </label>
           <label className="span-2">
             Notes

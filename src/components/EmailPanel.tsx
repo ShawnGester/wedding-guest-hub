@@ -9,20 +9,33 @@ import {
 import { uid } from '../lib/id'
 import type { EmailAttachment, EmailCampaign, Guest } from '../types'
 
+const SAVE_THE_DATE_IMAGE =
+  'https://www.dropbox.com/scl/fi/f1eqb4ye3c1nxieu337bx/shawn-mary-save-the-date.png?rlkey=m3xilbxatm25vt6cdfkj7hr7y&raw=1'
+
+const ACK_FORM_URL = 'https://forms.gle/1t4K36a7Kwcoh6EE7'
+
 const DEFAULT_BODY = `Dear {{firstName}},
 
 We're so excited to celebrate with you!
 
-Please save the date for {{coupleNames}} — {{weddingDate}}. Our wedding will take place in Vancouver, British Columbia, Canada, at {{venue}}.
+Please save the date for Shawn and Mary — Saturday, July 31, 2027.
+
+Our wedding will take place in Vancouver, British Columbia, Canada, at Furry Creek Golf & Country Club.
+
+Please confirm you received this: ${ACK_FORM_URL}
 
 With love,
 {{coupleNames}}`
 
-const DEFAULT_BODY_HTML = `<p>Dear {{firstName}},</p>
-<p>We're so excited to celebrate with you!</p>
-<p>Please save the date for <strong>{{coupleNames}}</strong> — <strong>{{weddingDate}}</strong>.</p>
-<p>Our wedding will take place in <strong>Vancouver, British Columbia, Canada</strong>, at <strong>{{venue}}</strong>.</p>
-<p>With love,<br/>{{coupleNames}}</p>`
+const DEFAULT_BODY_HTML = `<p style="font-family:Georgia,serif;font-size:16px;line-height:1.5;color:#14221f;">Dear {{firstName}},</p>
+<p style="margin:16px 0;">
+  <img src="${SAVE_THE_DATE_IMAGE}" alt="Save the date — Shawn and Mary" width="600" style="max-width:100%;height:auto;border:0;display:block;" />
+</p>
+<p style="font-family:Georgia,serif;font-size:14px;line-height:1.5;color:#3d4f4a;">(If the image doesn't load, Saturday, July 31, 2027 · Vancouver, BC · Furry Creek Golf &amp; Country Club)</p>
+<p style="margin:24px 0;">
+  <a href="${ACK_FORM_URL}" style="display:inline-block;background:#2f6f5e;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:8px;font-family:Georgia,serif;font-size:15px;">Confirm you received this</a>
+</p>
+<p style="font-family:Georgia,serif;font-size:13px;line-height:1.45;color:#3d4f4a;">Or open: <a href="${ACK_FORM_URL}">${ACK_FORM_URL}</a></p>`
 
 const SAMPLE_GUEST: Guest = {
   id: 'preview-sample',
@@ -35,6 +48,7 @@ const SAMPLE_GUEST: Guest = {
   physicalInvite: false,
   addressStatus: 'not_needed',
   saveTheDateStatus: 'not_sent',
+  saveTheDateAcknowledged: false,
   createdAt: '',
   updatedAt: '',
 }
@@ -239,8 +253,7 @@ export function EmailPanel() {
             />
           </label>
           <p className="tiny muted">
-            Tokens: <code>{'{{firstName}}'}</code>, <code>{'{{coupleNames}}'}</code>,{' '}
-            <code>{'{{weddingDate}}'}</code>, <code>{'{{venue}}'}</code>
+            Tokens: <code>{'{{firstName}}'}</code>, <code>{'{{coupleNames}}'}</code>
           </p>
 
           <div className="stack">
@@ -363,7 +376,11 @@ export function EmailPanel() {
                 <span className="recipient-meta">
                   <span className="recipient-name">
                     {g.firstName} {g.lastName}
-                    <span className="tiny muted"> · {g.saveTheDateStatus}</span>
+                    <span className="tiny muted">
+                      {' '}
+                      · {g.saveTheDateStatus}
+                      {g.saveTheDateAcknowledged ? ' · ack' : ''}
+                    </span>
                   </span>
                   <span className="recipient-email tiny muted">{g.email || 'no email'}</span>
                 </span>

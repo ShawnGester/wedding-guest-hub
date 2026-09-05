@@ -17,7 +17,7 @@ export function Dashboard() {
     {
       label: 'Save the dates sent',
       value: metrics.saveTheDateSent,
-      hint: `${metrics.saveTheDatePending} still to send`,
+      hint: `${metrics.saveTheDateAcknowledged} acknowledged · ${metrics.saveTheDatePending} still to send`,
     },
   ]
 
@@ -27,12 +27,7 @@ export function Dashboard() {
         <div>
           <p className="eyebrow">Overview</p>
           <h2>{data.settings.coupleNames || 'Wedding Guest Hub'}</h2>
-          <p className="muted">
-            {data.settings.weddingDate
-              ? `Wedding date ${data.settings.weddingDate}`
-              : 'Set your wedding date in Settings'}
-            {data.settings.venue ? ` · ${data.settings.venue}` : ''}
-          </p>
+          <p className="muted">Guest list, RSVPs, physical invites, and save-the-dates.</p>
         </div>
         <div className="row gap wrap">
           {data.settings.googleFormUrl ? (
@@ -74,8 +69,9 @@ export function Dashboard() {
           <li>Add guests (or import a spreadsheet) and mark who gets a physical invite.</li>
           <li>
             Export your guest spreadsheet and import here to sync the list exactly (add /
-            update / remove). Google Form CSVs work the same — only people in that file stay
-            on the list.
+            update / remove). Export save-the-date acknowledgement responses from Google
+            Forms and use <strong>Sync save-the-date ack CSV</strong> to mark who confirmed
+            (that import does not remove guests).
           </li>
           <li>
             Compose save-the-dates with links or light attachments, connect free EmailJS, and

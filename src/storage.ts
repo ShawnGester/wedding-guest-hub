@@ -13,6 +13,12 @@ export function loadData(): AppData {
     return {
       ...createEmptyData(),
       ...parsed,
+      guests: parsed.guests.map((g) => ({
+        ...g,
+        saveTheDateAcknowledged: Boolean(
+          (g as { saveTheDateAcknowledged?: boolean }).saveTheDateAcknowledged,
+        ),
+      })),
       settings: {
         ...createEmptyData().settings,
         ...parsed.settings,
