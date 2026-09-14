@@ -2,34 +2,38 @@ import { createEmptyData, type AppData } from './types'
 
 const KEY = 'wedding-guest-hub:v1'
 
+export function normalizeAppData(raw: unknown): AppData | null {
+  if (!raw || typeof raw !== 'object') return null
+  const parsed = raw as AppData
+  if (parsed.version !== 1 || !Array.isArray(parsed.guests)) return null
+  return {
+    ...createEmptyData(),
+    ...parsed,
+    guests: parsed.guests.map((g) => ({
+      ...g,
+      plusOne: Boolean((g as { plusOne?: boolean }).plusOne),
+      plusOneName: (g as { plusOneName?: string }).plusOneName ?? '',
+      saveTheDateAcknowledged: Boolean(
+        (g as { saveTheDateAcknowledged?: boolean }).saveTheDateAcknowledged,
+      ),
+    })),
+    campaigns: Array.isArray(parsed.campaigns) ? parsed.campaigns : [],
+    settings: {
+      ...createEmptyData().settings,
+      ...parsed.settings,
+      emailjs: {
+        ...createEmptyData().settings.emailjs,
+        ...parsed.settings?.emailjs,
+      },
+    },
+  }
+}
+
 export function loadData(): AppData {
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return createEmptyData()
-    const parsed = JSON.parse(raw) as AppData
-    if (parsed?.version !== 1 || !Array.isArray(parsed.guests)) {
-      return createEmptyData()
-    }
-    return {
-      ...createEmptyData(),
-      ...parsed,
-      guests: parsed.guests.map((g) => ({
-        ...g,
-        plusOne: Boolean((g as { plusOne?: boolean }).plusOne),
-        plusOneName: (g as { plusOneName?: string }).plusOneName ?? '',
-        saveTheDateAcknowledged: Boolean(
-          (g as { saveTheDateAcknowledged?: boolean }).saveTheDateAcknowledged,
-        ),
-      })),
-      settings: {
-        ...createEmptyData().settings,
-        ...parsed.settings,
-        emailjs: {
-          ...createEmptyData().settings.emailjs,
-          ...parsed.settings?.emailjs,
-        },
-      },
-    }
+    return normalizeAppData(JSON.parse(raw)) ?? createEmptyData()
   } catch {
     return createEmptyData()
   }

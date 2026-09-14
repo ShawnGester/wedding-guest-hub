@@ -3,13 +3,22 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useEffectEvent,
   type ReactNode,
 } from 'react'
+import {
+  cloudConfigured,
+  fetchHubState,
+  getCloud,
+  saveHubState,
+  signInWithEmail,
+  signOutCloud as signOutCloudSession,
+} from '../lib/cloud'
 import { guestCsvTemplate, guestsToCsv, mergeAckCsv, mergeRsvpCsv } from '../lib/csv'
 import { uid } from '../lib/id'
-import { downloadJson, downloadText, loadData, saveData } from '../storage'
+import { downloadJson, downloadText, loadData, normalizeAppData, saveData } from '../storage'
 import type {
   AppData,
   AppSettings,
@@ -56,6 +65,13 @@ interface AppContextValue {
   saveCampaign: (campaign: EmailCampaign) => void
   deleteCampaign: (id: string) => void
   markSaveTheDateSent: (guestIds: string[], status: Guest['saveTheDateStatus']) => void
+  cloudEnabled: boolean
+  cloudReady: boolean
+  cloudEmail: string | null
+  cloudError: string
+  cloudLive: boolean
+  signInCloud: (email: string) => Promise<void>
+  signOutCloud: () => Promise<void>
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -97,6 +113,13 @@ function computeMetrics(guests: Guest[]): Metrics {
 export function AppProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<AppData>(() => loadData())
   const [unlocked, setUnlocked] = useState(() => !loadData().settings.appPin)
+  const [cloudEmail, setCloudEmail] = useState<string | null>(null)
+  const [cloudReady, setCloudReady] = useState(!cloudConfigured())
+  const [cloudError, setCloudError] = useState('')
+  const [cloudLive, setCloudLive] = useState(false)
+  const hydrated = useRef(false)
+  const applyingRemote = useRef(false)
+  const lastPushed = useRef('')
 
   const persist = useEffectEvent((next: AppData) => {
     saveData(next)
@@ -105,6 +128,112 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     persist(data)
   }, [data, persist])
+
+  useEffect(() => {
+    const sb = getCloud()
+    if (!sb) return
+    let cancelled = false
+    sb.auth.getSession().then(({ data: sessionData }) => {
+      if (cancelled) return
+      setCloudEmail(sessionData.session?.user.email ?? null)
+      setCloudReady(true)
+    })
+    const { data: sub } = sb.auth.onAuthStateChange((_event, session) => {
+      setCloudEmail(session?.user.email ?? null)
+      if (!session) {
+        hydrated.current = false
+        setCloudLive(false)
+      }
+    })
+    return () => {
+      cancelled = true
+      sub.subscription.unsubscribe()
+    }
+  }, [])
+
+  useEffect(() => {
+    const sb = getCloud()
+    if (!sb || !cloudEmail) return
+    let cancelled = false
+    hydrated.current = false
+    setCloudLive(false)
+
+    async function hydrate() {
+      try {
+        const remote = await fetchHubState()
+        if (cancelled) return
+        const local = loadData()
+        if (remote && remote.guests.length > 0) {
+          lastPushed.current = JSON.stringify(remote)
+          applyingRemote.current = true
+          setData(remote)
+          setCloudError('')
+        } else if (local.guests.length > 0) {
+          await saveHubState(local, cloudEmail!)
+          lastPushed.current = JSON.stringify(local)
+          setCloudError('')
+        }
+        hydrated.current = true
+        setCloudLive(true)
+      } catch (err) {
+        if (!cancelled) {
+          setCloudError(err instanceof Error ? err.message : 'Could not sync guest list')
+          hydrated.current = true
+        }
+      }
+    }
+
+    void hydrate()
+
+    const channel = sb
+      .channel('hub-state')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'hub_state', filter: 'id=eq.1' },
+        (payload) => {
+          const next = (payload.new as { data?: unknown } | null)?.data
+          if (!next) return
+          const parsed = typeof next === 'string' ? JSON.parse(next) : next
+          const remote = normalizeAppData(parsed)
+          if (!remote) return
+          const serialized = JSON.stringify(remote)
+          if (serialized === lastPushed.current) return
+          lastPushed.current = serialized
+          applyingRemote.current = true
+          setData(remote)
+        },
+      )
+      .subscribe()
+
+    return () => {
+      cancelled = true
+      void sb.removeChannel(channel)
+    }
+  }, [cloudEmail])
+
+  useEffect(() => {
+    if (!cloudEmail || !hydrated.current) return
+    if (applyingRemote.current) {
+      applyingRemote.current = false
+      return
+    }
+    const snapshot = JSON.stringify(data)
+    if (snapshot === lastPushed.current) return
+    const email = cloudEmail
+    const handle = window.setTimeout(() => {
+      void saveHubState(data, email)
+        .then(() => {
+          lastPushed.current = snapshot
+          setCloudError('')
+          setCloudLive(true)
+        })
+        .catch((err: unknown) => {
+          setCloudError(err instanceof Error ? err.message : 'Could not save to cloud')
+          setCloudLive(false)
+        })
+    }, 700)
+    return () => window.clearTimeout(handle)
+  }, [data, cloudEmail])
 
   useEffect(() => {
     const mode = data.settings.theme === 'dark' ? 'dark' : 'light'
@@ -241,6 +370,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       deleteCampaign: (id) => {
         setData((d) => ({ ...d, campaigns: d.campaigns.filter((c) => c.id !== id) }))
       },
+      cloudEnabled: cloudConfigured(),
+      cloudReady,
+      cloudEmail,
+      cloudError,
+      cloudLive,
+      signInCloud: async (email) => {
+        setCloudError('')
+        await signInWithEmail(email)
+      },
+      signOutCloud: async () => {
+        await signOutCloudSession()
+        setCloudEmail(null)
+        setCloudLive(false)
+        hydrated.current = false
+      },
       markSaveTheDateSent: (guestIds, status) => {
         const now = new Date().toISOString()
         const set = new Set(guestIds)
@@ -259,7 +403,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }))
       },
     }),
-    [data, metrics, unlocked],
+    [data, metrics, unlocked, cloudReady, cloudEmail, cloudError, cloudLive],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

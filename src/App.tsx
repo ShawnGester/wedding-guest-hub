@@ -9,10 +9,79 @@ import './App.css'
 type Tab = 'dashboard' | 'guests' | 'email' | 'settings'
 
 function Shell() {
-  const { data, unlocked, unlock, metrics } = useApp()
+  const {
+    data,
+    unlocked,
+    unlock,
+    metrics,
+    cloudEnabled,
+    cloudReady,
+    cloudEmail,
+    cloudError,
+    cloudLive,
+    signInCloud,
+  } = useApp()
   const [tab, setTab] = useState<Tab>('dashboard')
   const [pin, setPin] = useState('')
   const [pinError, setPinError] = useState(false)
+  const [loginEmail, setLoginEmail] = useState('')
+  const [loginMsg, setLoginMsg] = useState('')
+  const [loginBusy, setLoginBusy] = useState(false)
+
+  if (cloudEnabled && !cloudReady) {
+    return (
+      <div className="lock-screen">
+        <div className="lock-card">
+          <p className="eyebrow">Wedding Guest Hub</p>
+          <h1>Connecting…</h1>
+        </div>
+      </div>
+    )
+  }
+
+  if (cloudEnabled && !cloudEmail) {
+    return (
+      <div className="lock-screen">
+        <div className="lock-card">
+          <p className="eyebrow">Wedding Guest Hub</p>
+          <h1>{data.settings.coupleNames || 'Welcome'}</h1>
+          <p className="muted">
+            Sign in with an allowed email to open the shared guest list. We’ll send a link — no
+            password.
+          </p>
+          <form
+            className="stack"
+            onSubmit={(e) => {
+              e.preventDefault()
+              setLoginBusy(true)
+              setLoginMsg('')
+              void signInCloud(loginEmail)
+                .then(() => setLoginMsg('Check your email for the sign-in link.'))
+                .catch((err: unknown) =>
+                  setLoginMsg(err instanceof Error ? err.message : 'Could not send link'),
+                )
+                .finally(() => setLoginBusy(false))
+            }}
+          >
+            <input
+              className="input"
+              type="email"
+              autoFocus
+              required
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
+              placeholder="you@gmail.com"
+            />
+            {loginMsg ? <p className="muted">{loginMsg}</p> : null}
+            {cloudError ? <p className="danger-text">{cloudError}</p> : null}
+            <button type="submit" className="btn btn-primary" disabled={loginBusy}>
+              {loginBusy ? 'Sending…' : 'Email me a sign-in link'}
+            </button>
+          </form>
+        </div>
+      </div>
+    )
+  }
 
   if (!unlocked) {
     return (
@@ -83,7 +152,10 @@ function Shell() {
         {tab === 'settings' ? <SettingsPanel /> : null}
       </main>
       <footer className="footer muted">
-        Local-first · free GitHub Pages hosting · EmailJS for sends · export backups often
+        {cloudLive && cloudEmail
+          ? `Live sync · ${cloudEmail}`
+          : 'This browser only until cloud sync is connected'}
+        {cloudError ? ` · ${cloudError}` : ''}
       </footer>
     </div>
   )

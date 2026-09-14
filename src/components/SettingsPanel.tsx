@@ -3,7 +3,8 @@ import { useApp } from '../context/AppContext'
 import type { ThemeMode } from '../types'
 
 export function SettingsPanel() {
-  const { data, updateSettings, exportBackup, importBackup, lock } = useApp()
+  const { data, updateSettings, exportBackup, importBackup, lock, cloudEmail, signOutCloud, cloudLive } =
+    useApp()
   const [s, setS] = useState(data.settings)
   const [msg, setMsg] = useState('')
 
@@ -162,10 +163,27 @@ export function SettingsPanel() {
         </label>
       </div>
 
+      <h3 className="subhead">Shared guest list</h3>
+      <p className="muted">
+        {cloudLive && cloudEmail
+          ? `Live with ${cloudEmail}. Your partner sees the same guests after they sign in with an allowed email.`
+          : 'Not connected yet. Create a free Supabase project, run supabase/schema.sql, then add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env and redeploy.'}
+      </p>
+      {cloudEmail ? (
+        <button
+          type="button"
+          className="btn"
+          onClick={() => {
+            void signOutCloud()
+          }}
+        >
+          Sign out of shared list
+        </button>
+      ) : null}
+
       <h3 className="subhead">Backup</h3>
       <p className="muted">
-        Data lives in this browser (localStorage). Export regularly — and before clearing
-        site data. Import to restore on another device.
+        Cloud is the shared copy. Export a JSON backup before changing browsers if sync is off.
       </p>
       <div className="row gap wrap">
         <button type="button" className="btn" onClick={() => exportBackup()}>
