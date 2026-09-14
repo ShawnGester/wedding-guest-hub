@@ -51,6 +51,7 @@ interface AppContextValue {
   addGuest: (partial?: Partial<Guest>) => Guest
   updateGuest: (id: string, patch: Partial<Guest>) => void
   deleteGuest: (id: string) => void
+  reorderGuests: (activeId: string, overId: string) => void
   importRsvpCsv: (csv: string, mode: 'rsvp' | 'address') => {
     matched: number
     created: number
@@ -298,6 +299,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       },
       deleteGuest: (id) => {
         setData((d) => ({ ...d, guests: d.guests.filter((g) => g.id !== id) }))
+      },
+      reorderGuests: (activeId, overId) => {
+        if (!activeId || !overId || activeId === overId) return
+        setData((d) => {
+          const from = d.guests.findIndex((g) => g.id === activeId)
+          const to = d.guests.findIndex((g) => g.id === overId)
+          if (from < 0 || to < 0) return d
+          const guests = d.guests.slice()
+          const [moved] = guests.splice(from, 1)
+          guests.splice(to, 0, moved)
+          return { ...d, guests }
+        })
       },
       importRsvpCsv: (csv, mode) => {
         let result = { matched: 0, created: 0, removed: 0 }

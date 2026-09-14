@@ -293,10 +293,6 @@ export const GUEST_CSV_HEADERS = [
   'household',
   'partySize',
   'tags',
-  'rsvpStatus',
-  'physicalInvite',
-  'addressStatus',
-  'mailingAddress',
   'saveTheDateStatus',
   'saveTheDateAcknowledged',
   'notes',
@@ -316,10 +312,6 @@ function guestRow(g: {
   household?: string
   partySize: number
   tags: string[]
-  rsvpStatus: string
-  physicalInvite: boolean
-  addressStatus: string
-  mailingAddress?: string
   saveTheDateStatus: string
   saveTheDateAcknowledged?: boolean
   notes?: string
@@ -334,10 +326,6 @@ function guestRow(g: {
     g.household ?? '',
     String(g.partySize),
     g.tags.join(';'),
-    g.rsvpStatus,
-    String(g.physicalInvite),
-    g.addressStatus,
-    g.mailingAddress ?? '',
     g.saveTheDateStatus,
     String(Boolean(g.saveTheDateAcknowledged)),
     g.notes ?? '',
@@ -360,10 +348,6 @@ export function guestCsvTemplate(): string {
       household: 'Example household',
       partySize: 2,
       tags: ['family'],
-      rsvpStatus: 'unknown',
-      physicalInvite: false,
-      addressStatus: 'not_needed',
-      mailingAddress: '',
       saveTheDateStatus: 'not_sent',
       saveTheDateAcknowledged: false,
       notes: 'EXAMPLE – delete me',

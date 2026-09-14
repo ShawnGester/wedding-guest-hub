@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { useApp } from '../context/AppContext'
-import type { AddressStatus, Guest, RsvpStatus, SaveTheDateStatus } from '../types'
+import type { Guest, RsvpStatus, SaveTheDateStatus } from '../types'
 
 type Filter = 'all' | 'no_email' | 'std_pending' | 'ack_pending'
 
@@ -11,6 +11,7 @@ export function GuestsPanel() {
     addGuest,
     updateGuest,
     deleteGuest,
+    reorderGuests,
     importRsvpCsv,
     importAckCsv,
     refreshAcksFromFeed,
@@ -22,6 +23,11 @@ export function GuestsPanel() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [importMsg, setImportMsg] = useState('')
   const [ackRefreshing, setAckRefreshing] = useState(false)
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [overId, setOverId] = useState<string | null>(null)
+  const tableWrapRef = useRef<HTMLDivElement>(null)
+  const dragIdRef = useRef<string | null>(null)
+  const overIdRef = useRef<string | null>(null)
 
   const guests = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -60,6 +66,59 @@ export function GuestsPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  function neighborId(id: string, direction: -1 | 1) {
+    const index = guests.findIndex((g) => g.id === id)
+    if (index < 0) return null
+    return guests[index + direction]?.id ?? null
+  }
+
+  function finishReorder() {
+    const from = dragIdRef.current
+    const to = overIdRef.current
+    dragIdRef.current = null
+    overIdRef.current = null
+    setDragId(null)
+    setOverId(null)
+    document.body.classList.remove('is-reordering')
+    if (from && to && from !== to) reorderGuests(from, to)
+  }
+
+  function onHandlePointerDown(event: PointerEvent<HTMLButtonElement>, id: string) {
+    if (event.button !== 0) return
+    event.preventDefault()
+    dragIdRef.current = id
+    overIdRef.current = null
+    setDragId(id)
+    setOverId(null)
+    document.body.classList.add('is-reordering')
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+
+  function onHandlePointerMove(event: PointerEvent<HTMLButtonElement>) {
+    if (!dragIdRef.current) return
+    const wrap = tableWrapRef.current
+    if (wrap) {
+      const rect = wrap.getBoundingClientRect()
+      if (event.clientY < rect.top + 48) wrap.scrollTop -= 14
+      else if (event.clientY > rect.bottom - 48) wrap.scrollTop += 14
+    }
+    const under = document.elementFromPoint(event.clientX, event.clientY)
+    const row = under?.closest<HTMLElement>('tr[data-guest-id]')
+    const next = row?.dataset.guestId ?? null
+    const target = next && next !== dragIdRef.current ? next : null
+    if (overIdRef.current !== target) {
+      overIdRef.current = target
+      setOverId(target)
+    }
+  }
+
+  function onHandleKeyDown(event: KeyboardEvent<HTMLButtonElement>, id: string) {
+    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return
+    event.preventDefault()
+    const target = neighborId(id, event.key === 'ArrowUp' ? -1 : 1)
+    if (target) reorderGuests(id, target)
+  }
+
   async function onImportFile(file: File, mode: 'rsvp' | 'address') {
     const text = await file.text()
     const result = importRsvpCsv(text, mode)
@@ -80,7 +139,7 @@ export function GuestsPanel() {
     <section className="panel">
       <header className="panel-head">
         <div>
-          <h2>Guest list</h2>
+          <h2>Guest List</h2>
           <p className="muted">
             Track emails, Google form RSVPs, and physical-invite address intakes.
           </p>
@@ -229,7 +288,7 @@ export function GuestsPanel() {
         {importMsg ? <span className="muted">{importMsg}</span> : null}
       </div>
 
-      <div className="table-wrap">
+      <div className="table-wrap" ref={tableWrapRef}>
         <table className="table">
           <thead>
             <tr>
@@ -240,11 +299,20 @@ export function GuestsPanel() {
               <th>Save the date</th>
               <th>Ack</th>
               <th />
+              <th className="drag-cell">
+                <span className="sr-only">Reorder</span>
+              </th>
             </tr>
           </thead>
           <tbody>
             {guests.map((g) => (
-              <tr key={g.id}>
+              <tr
+                key={g.id}
+                data-guest-id={g.id}
+                className={
+                  g.id === dragId ? 'is-dragging' : g.id === overId ? 'is-drop-target' : undefined
+                }
+              >
                 <td>
                   <strong>
                     {g.firstName} {g.lastName}
@@ -278,11 +346,31 @@ export function GuestsPanel() {
                     Delete
                   </button>
                 </td>
+                <td className="drag-cell">
+                  <button
+                    type="button"
+                    className="drag-handle"
+                    aria-label={`Reorder ${g.firstName} ${g.lastName}`}
+                    title="Drag to reorder"
+                    onPointerDown={(event) => onHandlePointerDown(event, g.id)}
+                    onPointerMove={onHandlePointerMove}
+                    onPointerUp={finishReorder}
+                    onPointerCancel={finishReorder}
+                    onKeyDown={(event) => onHandleKeyDown(event, g.id)}
+                  >
+                    <span />
+                    <span />
+                    <span />
+                    <span />
+                    <span />
+                    <span />
+                  </button>
+                </td>
               </tr>
             ))}
             {!guests.length ? (
               <tr>
-                <td colSpan={7} className="muted center">
+                <td colSpan={8} className="muted center">
                   No guests match this view. Add someone or clear filters.
                 </td>
               </tr>
@@ -439,50 +527,6 @@ function GuestEditor({
               <option value="declined">Declined</option>
             </select>
           </label>
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={draft.physicalInvite}
-              onChange={(e) => {
-                const on = e.target.checked
-                setDraft((d) => ({
-                  ...d,
-                  physicalInvite: on,
-                  addressStatus: on
-                    ? d.addressStatus === 'not_needed'
-                      ? 'pending'
-                      : d.addressStatus
-                    : 'not_needed',
-                }))
-              }}
-            />
-            Sending physical invite
-          </label>
-          {draft.physicalInvite ? (
-            <>
-              <label>
-                Address intake
-                <select
-                  className="input"
-                  value={draft.addressStatus}
-                  onChange={(e) => set('addressStatus', e.target.value as AddressStatus)}
-                >
-                  <option value="pending">Pending</option>
-                  <option value="submitted">Submitted</option>
-                  <option value="not_needed">Not needed</option>
-                </select>
-              </label>
-              <label className="span-2">
-                Mailing address
-                <textarea
-                  className="input"
-                  rows={2}
-                  value={draft.mailingAddress ?? ''}
-                  onChange={(e) => set('mailingAddress', e.target.value)}
-                />
-              </label>
-            </>
-          ) : null}
           <label>
             Save the date
             <select
