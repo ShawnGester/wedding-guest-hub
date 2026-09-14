@@ -167,7 +167,7 @@ export function SettingsPanel() {
       <p className="muted">
         {cloudLive && cloudEmail
           ? `Live with ${cloudEmail}. Your partner sees the same guests after they sign in with an allowed email.`
-          : 'Not connected yet. Create a free Supabase project, run supabase/schema.sql, then add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env and redeploy.'}
+          : 'Not connected yet. Use this environment's Supabase URL and anon key in .env.development (local) or .env.production (deploy). Do not put them in a shared .env. Run supabase/schema.sql in that project, then restart or redeploy.'}
       </p>
       {cloudEmail ? (
         <button

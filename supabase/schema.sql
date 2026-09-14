@@ -1,4 +1,5 @@
--- Run this once in the Supabase SQL editor (free project).
+-- Run this SQL in BOTH Supabase projects (dev and production).
+-- Dev credentials: .env.development. Production: .env.production.
 -- Then Authentication → URL configuration:
 --   Site URL: https://shawngester.github.io/wedding-guest-hub/
 --   Redirect URLs: https://shawngester.github.io/wedding-guest-hub/
