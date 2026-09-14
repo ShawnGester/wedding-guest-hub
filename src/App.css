@@ -324,6 +324,11 @@ a {
   align-items: center;
 }
 
+.import-row {
+  position: relative;
+  z-index: 2;
+}
+
 /* Hover/focus help for guest import controls only. Native title is too easy to miss. */
 .import-row .tip {
   position: relative;
@@ -333,7 +338,7 @@ a {
 
 .import-row .tip:hover,
 .import-row .tip:focus-within {
-  z-index: 6;
+  z-index: 40;
 }
 
 .import-row .tip:focus-visible {
@@ -342,11 +347,47 @@ a {
   border-radius: 12px;
 }
 
+/* Keep the CSV picker in the tab order so the tooltip can show on focus.
+   Do not use `hidden` / `display: none` — that drops it from the tab order.
+   Chrome/Edge still paint "Choose File / No file chosen" unless the widget's
+   paint is clipped. `clip` alone is not enough on those controls; `clip-path`
+   plus opacity hide the native UI without removing keyboard focus. */
+.import-row .file-btn {
+  position: relative;
+}
+
+.import-row .file-btn-input {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+  color: transparent;
+  font-size: 0;
+}
+
+.import-row .file-btn-input:focus {
+  outline: none;
+}
+
+.import-row .tip:focus-within .file-btn {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 .import-row .tip-bubble {
   position: absolute;
-  top: calc(100% + 0.45rem);
+  top: auto;
+  bottom: calc(100% + 0.55rem);
   left: 0;
-  z-index: 6;
+  z-index: 40;
   width: max-content;
   max-width: min(22rem, 72vw);
   padding: 0.55rem 0.7rem;
@@ -365,7 +406,13 @@ a {
   visibility: hidden;
 }
 
+/* Later controls usually sit on the next wrap line. Open those downward
+   (into the table) and earlier ones upward (into the toolbar) so a bubble
+   never lands on a neighboring button. Absolute positioning keeps hover
+   from growing the row and revealing the file input. */
 .import-row .tip:nth-child(n + 4) .tip-bubble {
+  top: calc(100% + 0.55rem);
+  bottom: auto;
   left: auto;
   right: 0;
 }
@@ -611,14 +658,21 @@ a {
   border-color: rgba(47, 111, 94, 0.22);
 }
 
+/* Portaled to document.body so ancestor transform / backdrop-filter cannot
+   trap position:fixed. Stay opaque and clickable whenever the overlay is open. */
 .modal-backdrop {
   position: fixed;
   inset: 0;
+  width: 100%;
+  height: 100%;
   background: rgba(20, 34, 31, 0.45);
   display: grid;
   place-items: center;
   padding: 1rem;
-  z-index: 40;
+  z-index: 1000;
+  opacity: 1;
+  overflow: visible;
+  pointer-events: auto;
   animation: fade 0.2s ease;
 }
 

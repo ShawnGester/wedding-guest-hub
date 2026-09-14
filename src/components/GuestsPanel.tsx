@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useApp } from '../context/AppContext'
 import type { AddressStatus, Guest, RsvpStatus, SaveTheDateStatus } from '../types'
 
-type Filter = 'all' | 'missing_rsvp' | 'physical' | 'no_email' | 'std_pending' | 'ack_pending'
+type Filter = 'all' | 'no_email' | 'std_pending' | 'ack_pending'
 
 export function GuestsPanel() {
   const {
@@ -25,8 +26,6 @@ export function GuestsPanel() {
   const guests = useMemo(() => {
     const q = query.trim().toLowerCase()
     return data.guests.filter((g) => {
-      if (filter === 'missing_rsvp' && g.rsvpStatus === 'submitted') return false
-      if (filter === 'physical' && !g.physicalInvite) return false
       if (filter === 'no_email' && g.email.trim()) return false
       if (filter === 'std_pending' && g.saveTheDateStatus === 'sent') return false
       if (filter === 'ack_pending' && g.saveTheDateAcknowledged) return false
@@ -116,8 +115,6 @@ export function GuestsPanel() {
           onChange={(e) => setFilter(e.target.value as Filter)}
         >
           <option value="all">All guests</option>
-          <option value="missing_rsvp">Missing RSVP form</option>
-          <option value="physical">Physical invites</option>
           <option value="no_email">Missing email</option>
           <option value="std_pending">Save-the-date pending</option>
           <option value="ack_pending">Save-the-date not acknowledged</option>
@@ -139,13 +136,15 @@ export function GuestsPanel() {
             delete.
           </span>
         </span>
-        <span className="tip" tabIndex={0} aria-label="Sync from Google RSVP CSV" aria-describedby="tip-rsvp-sync">
+        <span className="tip">
           <label className="file-btn" aria-describedby="tip-rsvp-sync">
             Sync from Google RSVP CSV
             <input
               type="file"
+              className="file-btn-input"
               accept=".csv,text/csv"
-              hidden
+              aria-label="Sync from Google RSVP CSV"
+              aria-describedby="tip-rsvp-sync"
               onChange={(e) => {
                 const f = e.target.files?.[0]
                 if (f) void onImportFile(f, 'rsvp')
@@ -158,18 +157,15 @@ export function GuestsPanel() {
             anyone not in the file, and marks those rows as RSVP submitted.
           </span>
         </span>
-        <span
-          className="tip"
-          tabIndex={0}
-          aria-label="Sync from address intake CSV"
-          aria-describedby="tip-address-sync"
-        >
+        <span className="tip">
           <label className="file-btn" aria-describedby="tip-address-sync">
             Sync from address intake CSV
             <input
               type="file"
+              className="file-btn-input"
               accept=".csv,text/csv"
-              hidden
+              aria-label="Sync from address intake CSV"
+              aria-describedby="tip-address-sync"
               onChange={(e) => {
                 const f = e.target.files?.[0]
                 if (f) void onImportFile(f, 'address')
@@ -182,18 +178,15 @@ export function GuestsPanel() {
             invite with address submitted, and people not in the file are removed.
           </span>
         </span>
-        <span
-          className="tip"
-          tabIndex={0}
-          aria-label="Sync save-the-date ack CSV"
-          aria-describedby="tip-ack-sync"
-        >
+        <span className="tip">
           <label className="file-btn" aria-describedby="tip-ack-sync">
             Sync save-the-date ack CSV
             <input
               type="file"
+              className="file-btn-input"
               accept=".csv,text/csv"
-              hidden
+              aria-label="Sync save-the-date ack CSV"
+              aria-describedby="tip-ack-sync"
               onChange={(e) => {
                 const f = e.target.files?.[0]
                 if (f) void onImportAck(f)
@@ -241,12 +234,9 @@ export function GuestsPanel() {
           <thead>
             <tr>
               <th>Name</th>
+              <th>Email</th>
               <th>Plus 1</th>
               <th>Plus 1 name</th>
-              <th>Email</th>
-              <th>RSVP form</th>
-              <th>Physical</th>
-              <th>Address</th>
               <th>Save the date</th>
               <th>Ack</th>
               <th />
@@ -261,16 +251,9 @@ export function GuestsPanel() {
                   </strong>
                   {g.household ? <div className="tiny muted">{g.household}</div> : null}
                 </td>
+                <td className="mono">{g.email || '—'}</td>
                 <td>{g.plusOne ? 'Yes' : '—'}</td>
                 <td>{g.plusOne && g.plusOneName?.trim() ? g.plusOneName : '—'}</td>
-                <td className="mono">{g.email || '—'}</td>
-                <td>
-                  <StatusPill value={g.rsvpStatus} />
-                </td>
-                <td>{g.physicalInvite ? 'Yes' : '—'}</td>
-                <td>
-                  {g.physicalInvite ? <StatusPill value={g.addressStatus} /> : '—'}
-                </td>
                 <td>
                   <StatusPill value={g.saveTheDateStatus} />
                 </td>
@@ -299,7 +282,7 @@ export function GuestsPanel() {
             ))}
             {!guests.length ? (
               <tr>
-                <td colSpan={10} className="muted center">
+                <td colSpan={7} className="muted center">
                   No guests match this view. Add someone or clear filters.
                 </td>
               </tr>
@@ -339,7 +322,7 @@ function GuestEditor({
   const set = <K extends keyof Guest>(key: K, value: Guest[K]) =>
     setDraft((d) => ({ ...d, [key]: value }))
 
-  return (
+  return createPortal(
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
       <div
         className="modal"
@@ -551,6 +534,7 @@ function GuestEditor({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
