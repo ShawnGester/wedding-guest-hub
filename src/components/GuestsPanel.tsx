@@ -125,61 +125,114 @@ export function GuestsPanel() {
       </div>
 
       <div className="import-row">
-        <button type="button" className="btn" onClick={() => downloadGuestCsvTemplate()}>
-          Download guest CSV template
-        </button>
-        <label className="file-btn">
-          Sync from Google RSVP CSV
-          <input
-            type="file"
-            accept=".csv,text/csv"
-            hidden
-            onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) void onImportFile(f, 'rsvp')
-              e.target.value = ''
-            }}
-          />
-        </label>
-        <label className="file-btn">
-          Sync from address intake CSV
-          <input
-            type="file"
-            accept=".csv,text/csv"
-            hidden
-            onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) void onImportFile(f, 'address')
-              e.target.value = ''
-            }}
-          />
-        </label>
-        <label className="file-btn">
-          Sync save-the-date ack CSV
-          <input
-            type="file"
-            accept=".csv,text/csv"
-            hidden
-            onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) void onImportAck(f)
-              e.target.value = ''
-            }}
-          />
-        </label>
-        <button
-          type="button"
-          className="btn"
-          disabled={!hasAckFeed || ackRefreshing}
-          onClick={() => void refreshAcks()}
-          title={
-            hasAckFeed
-              ? 'Fetch acknowledgements from the Settings feed URL'
-              : 'Set Ack responses feed URL in Settings first'
-          }
+        <span className="tip">
+          <button
+            type="button"
+            className="btn"
+            aria-describedby="tip-guest-template"
+            onClick={() => downloadGuestCsvTemplate()}
+          >
+            Download guest CSV template
+          </button>
+          <span id="tip-guest-template" className="tip-bubble" role="tooltip">
+            Downloads a blank spreadsheet with the columns this app expects, plus one sample row to
+            delete.
+          </span>
+        </span>
+        <span className="tip" tabIndex={0} aria-label="Sync from Google RSVP CSV" aria-describedby="tip-rsvp-sync">
+          <label className="file-btn" aria-describedby="tip-rsvp-sync">
+            Sync from Google RSVP CSV
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) void onImportFile(f, 'rsvp')
+                e.target.value = ''
+              }}
+            />
+          </label>
+          <span id="tip-rsvp-sync" className="tip-bubble" role="tooltip">
+            Makes the guest list match that file exactly. Updates matches, adds new rows, removes
+            anyone not in the file, and marks those rows as RSVP submitted.
+          </span>
+        </span>
+        <span
+          className="tip"
+          tabIndex={0}
+          aria-label="Sync from address intake CSV"
+          aria-describedby="tip-address-sync"
         >
-          {ackRefreshing ? 'Refreshing acks…' : 'Refresh acks from Google'}
-        </button>
+          <label className="file-btn" aria-describedby="tip-address-sync">
+            Sync from address intake CSV
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) void onImportFile(f, 'address')
+                e.target.value = ''
+              }}
+            />
+          </label>
+          <span id="tip-address-sync" className="tip-bubble" role="tooltip">
+            Same full sync for physical-invite addresses. Matched rows are marked as a physical
+            invite with address submitted, and people not in the file are removed.
+          </span>
+        </span>
+        <span
+          className="tip"
+          tabIndex={0}
+          aria-label="Sync save-the-date ack CSV"
+          aria-describedby="tip-ack-sync"
+        >
+          <label className="file-btn" aria-describedby="tip-ack-sync">
+            Sync save-the-date ack CSV
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) void onImportAck(f)
+                e.target.value = ''
+              }}
+            />
+          </label>
+          <span id="tip-ack-sync" className="tip-bubble" role="tooltip">
+            Manual ack import that matches by email only and marks those guests as Received. Does
+            not add or delete guests.
+          </span>
+        </span>
+        <span
+          className="tip"
+          tabIndex={!hasAckFeed || ackRefreshing ? 0 : undefined}
+          aria-label={
+            !hasAckFeed || ackRefreshing
+              ? ackRefreshing
+                ? 'Refreshing acks'
+                : 'Refresh acks from Google'
+              : undefined
+          }
+          aria-describedby={!hasAckFeed || ackRefreshing ? 'tip-ack-refresh' : undefined}
+        >
+          <button
+            type="button"
+            className="btn"
+            disabled={!hasAckFeed || ackRefreshing}
+            aria-describedby="tip-ack-refresh"
+            onClick={() => void refreshAcks()}
+          >
+            {ackRefreshing ? 'Refreshing acks…' : 'Refresh acks from Google'}
+          </button>
+          <span id="tip-ack-refresh" className="tip-bubble" role="tooltip">
+            {hasAckFeed
+              ? 'Pulls acknowledgement responses from the feed URL in Settings and marks matching emails as Received. Does not add or delete guests.'
+              : 'Set the Ack responses feed URL in Settings first. Pulls acknowledgement responses from that feed and marks matching emails as Received. Does not add or delete guests.'}
+          </span>
+        </span>
         {importMsg ? <span className="muted">{importMsg}</span> : null}
       </div>
 

@@ -324,6 +324,63 @@ a {
   align-items: center;
 }
 
+/* Hover/focus help for guest import controls only. Native title is too easy to miss. */
+.import-row .tip {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+}
+
+.import-row .tip:hover,
+.import-row .tip:focus-within {
+  z-index: 6;
+}
+
+.import-row .tip:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+
+.import-row .tip-bubble {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  left: 0;
+  z-index: 6;
+  width: max-content;
+  max-width: min(22rem, 72vw);
+  padding: 0.55rem 0.7rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: #14221f;
+  color: #f7f3ee;
+  box-shadow: var(--shadow);
+  font-size: 0.82rem;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.import-row .tip:nth-child(n + 4) .tip-bubble {
+  left: auto;
+  right: 0;
+}
+
+[data-theme='dark'] .import-row .tip-bubble {
+  background: #f3efe8;
+  color: #14221f;
+}
+
+.import-row .tip:hover .tip-bubble,
+.import-row .tip:focus-within .tip-bubble {
+  opacity: 1;
+  visibility: visible;
+}
+
 .table-wrap {
   overflow: auto;
   border: 1px solid var(--line);
