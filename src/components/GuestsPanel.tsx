@@ -367,19 +367,21 @@ export function GuestsPanel() {
                     <span className="pill pill-pending">Pending</span>
                   )}
                 </td>
-                <td className="row gap end">
-                  <button type="button" className="btn btn-ghost" onClick={() => setEditingId(g.id)}>
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-ghost danger"
-                    onClick={() => {
-                      if (confirm(`Remove ${g.firstName} ${g.lastName}?`)) deleteGuest(g.id)
-                    }}
-                  >
-                    Delete
-                  </button>
+                <td className="actions-cell">
+                  <div className="row gap end">
+                    <button type="button" className="btn btn-ghost" onClick={() => setEditingId(g.id)}>
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost danger"
+                      onClick={() => {
+                        if (confirm(`Remove ${g.firstName} ${g.lastName}?`)) deleteGuest(g.id)
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </td>
                 <td className="drag-cell">
                   <button
