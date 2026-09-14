@@ -17,6 +17,7 @@ import {
   signOutCloud as signOutCloudSession,
 } from '../lib/cloud'
 import { guestCsvTemplate, guestsToCsv, mergeAckCsv, mergeRsvpCsv } from '../lib/csv'
+import { seatedCount } from '../lib/plusOnes'
 import { uid } from '../lib/id'
 import { downloadJson, downloadText, loadData, normalizeAppData, saveData } from '../storage'
 import type {
@@ -78,8 +79,11 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | null>(null)
 
 function computeMetrics(guests: Guest[]): Metrics {
-  const totalGuests = guests.length
-  const totalParty = guests.reduce((s, g) => s + (g.partySize || 1), 0)
+  const totalGuests = guests.reduce((s, g) => s + seatedCount(g), 0)
+  const totalParty = guests.reduce(
+    (s, g) => s + Math.max(g.partySize || 1, seatedCount(g)),
+    0,
+  )
   const withEmail = guests.filter((g) => g.email.trim()).length
   const rsvpSubmitted = guests.filter((g) => g.rsvpStatus === 'submitted').length
   const rsvpUnknown = guests.filter((g) => g.rsvpStatus === 'unknown').length
@@ -101,7 +105,7 @@ function computeMetrics(guests: Guest[]): Metrics {
     withEmail,
     rsvpSubmitted,
     rsvpUnknown,
-    rsvpRate: totalGuests ? Math.round((rsvpSubmitted / totalGuests) * 100) : 0,
+    rsvpRate: guests.length ? Math.round((rsvpSubmitted / guests.length) * 100) : 0,
     physicalInvites,
     addressPending,
     addressSubmitted,
@@ -273,6 +277,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           firstName: '',
           lastName: '',
           email: '',
+          plusOnes: [],
           plusOne: false,
           plusOneName: '',
           partySize: 1,

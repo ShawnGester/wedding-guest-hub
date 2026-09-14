@@ -1,4 +1,5 @@
 import emailjs from '@emailjs/browser'
+import { plusOneNames } from './plusOnes'
 import type { AppSettings, EmailAttachment, Guest } from '../types'
 
 export function emailjsConfigured(settings: AppSettings): boolean {
@@ -11,12 +12,14 @@ export function plusOneFirstName(name?: string): string {
   return (name ?? '').trim().split(/\s+/).filter(Boolean)[0] ?? ''
 }
 
-/** Greeting used in emails: "Caroline" or "Caroline and Choco". */
+/** Greeting used in emails: "Caroline", "Caroline and Choco", or "Caroline, Choco, and Sam". */
 export function greetingName(guest: Guest): string {
-  const primary = guest.firstName.trim()
-  const extra = guest.plusOne ? plusOneFirstName(guest.plusOneName) : ''
-  if (primary && extra) return `${primary} and ${extra}`
-  return primary || extra
+  const names = [guest.firstName.trim(), ...plusOneNames(guest).map(plusOneFirstName)].filter(
+    Boolean,
+  )
+  if (names.length <= 1) return names[0] ?? ''
+  if (names.length === 2) return `${names[0]} and ${names[1]}`
+  return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
 }
 
 function applyMessageTokens(template: string, settings: AppSettings, guest: Guest): string {

@@ -9,9 +9,11 @@ export interface Guest {
   email: string
   phone?: string
   household?: string
-  /** Extra guest on this invitation (same email) */
+  /** Extra guests on this invitation (same email). Names are the source of truth. */
+  plusOnes: string[]
+  /** True when plusOnes has at least one name. Kept in sync for older saves. */
   plusOne: boolean
-  /** Full name of the plus one, e.g. "Choco Marks" */
+  /** Comma-joined plus-one names. Kept in sync for spreadsheet rows and older saves. */
   plusOneName?: string
   partySize: number
   tags: string[]

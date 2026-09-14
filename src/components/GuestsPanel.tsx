@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { useApp } from '../context/AppContext'
+import { plusOneNames, withPlusOnes } from '../lib/plusOnes'
 import type { Guest, RsvpStatus, SaveTheDateStatus } from '../types'
 
 type Filter = 'all' | 'no_email' | 'std_pending' | 'ack_pending'
@@ -43,7 +44,7 @@ export function GuestsPanel() {
       if (filter === 'std_pending' && g.saveTheDateStatus === 'sent') return false
       if (filter === 'ack_pending' && g.saveTheDateAcknowledged) return false
       if (!q) return true
-      const hay = `${g.firstName} ${g.lastName} ${g.plusOneName ?? ''} ${g.email} ${g.household ?? ''} ${g.tags.join(' ')}`.toLowerCase()
+      const hay = `${g.firstName} ${g.lastName} ${plusOneNames(g).join(' ')} ${g.email} ${g.household ?? ''} ${g.tags.join(' ')}`.toLowerCase()
       return hay.includes(q)
     })
   }, [data.guests, query, filter])
@@ -320,8 +321,7 @@ export function GuestsPanel() {
             <tr>
               <th>Name</th>
               <th>Email</th>
-              <th>Plus 1</th>
-              <th>Plus 1 name</th>
+              <th>Plus 1s</th>
               <th>Save the date</th>
               <th>Ack</th>
               <th />
@@ -346,8 +346,17 @@ export function GuestsPanel() {
                   {g.household ? <div className="tiny muted">{g.household}</div> : null}
                 </td>
                 <td className="mono">{g.email || '—'}</td>
-                <td>{g.plusOne ? 'Yes' : '—'}</td>
-                <td>{g.plusOne && g.plusOneName?.trim() ? g.plusOneName : '—'}</td>
+                <td>
+                  {plusOneNames(g).length ? (
+                    <div className="plus-one-stack">
+                      {plusOneNames(g).map((name, index) => (
+                        <div key={`${g.id}-${index}`}>{name}</div>
+                      ))}
+                    </div>
+                  ) : (
+                    '—'
+                  )}
+                </td>
                 <td>
                   <StatusPill value={g.saveTheDateStatus} />
                 </td>
@@ -396,7 +405,7 @@ export function GuestsPanel() {
             ))}
             {!guests.length ? (
               <tr>
-                <td colSpan={8} className="muted center">
+                <td colSpan={7} className="muted center">
                   No guests match this view. Add someone or clear filters.
                 </td>
               </tr>
@@ -435,6 +444,17 @@ export function GuestsPanel() {
       ) : null}
     </section>
   )
+}
+
+function syncPlusOneDraft(guest: Guest, names: string[]): Guest {
+  const filled = names.map((name) => name.trim()).filter(Boolean)
+  return {
+    ...guest,
+    plusOnes: names,
+    plusOne: filled.length > 0,
+    plusOneName: filled.join(', '),
+    partySize: 1 + filled.length,
+  }
 }
 
 function StatusPill({ value }: { value: string }) {
@@ -482,32 +502,42 @@ function GuestEditor({
               onChange={(e) => set('lastName', e.target.value)}
             />
           </label>
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={Boolean(draft.plusOne)}
-              onChange={(e) => {
-                const on = e.target.checked
-                setDraft((d) => ({
-                  ...d,
-                  plusOne: on,
-                  partySize: on && d.partySize < 2 ? 2 : d.partySize,
-                }))
-              }}
-            />
-            Plus 1
-          </label>
-          {draft.plusOne ? (
-            <label>
-              Plus 1 name
-              <input
-                className="input"
-                placeholder="Choco Marks"
-                value={draft.plusOneName ?? ''}
-                onChange={(e) => set('plusOneName', e.target.value)}
-              />
-            </label>
-          ) : null}
+          <div className="span-2 plus-one-editor">
+            <span>Plus 1s</span>
+            {(draft.plusOnes ?? []).map((name, index) => (
+              <div className="row gap" key={index}>
+                <input
+                  className="input"
+                  placeholder="Choco Marks"
+                  value={name}
+                  onChange={(e) => {
+                    const next = [...(draft.plusOnes ?? [])]
+                    next[index] = e.target.value
+                    setDraft((d) => syncPlusOneDraft(d, next))
+                  }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => {
+                    const next = (draft.plusOnes ?? []).filter((_, i) => i !== index)
+                    setDraft((d) => syncPlusOneDraft(d, next))
+                  }}
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="btn"
+              onClick={() =>
+                setDraft((d) => syncPlusOneDraft(d, [...(d.plusOnes ?? []), '']))
+              }
+            >
+              Add plus 1
+            </button>
+          </div>
           <label>
             Email
             <input
@@ -617,7 +647,11 @@ function GuestEditor({
           <button type="button" className="btn" onClick={onClose}>
             Cancel
           </button>
-          <button type="button" className="btn btn-primary" onClick={() => onSave(draft)}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => onSave(withPlusOnes(draft, draft.plusOnes ?? []))}
+          >
             Save guest
           </button>
         </div>

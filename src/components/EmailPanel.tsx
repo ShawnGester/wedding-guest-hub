@@ -47,6 +47,7 @@ const SAMPLE_GUEST: Guest = {
   tags: [],
   rsvpStatus: 'unknown',
   physicalInvite: false,
+  plusOnes: ['Choco Marks'],
   plusOne: true,
   plusOneName: 'Choco Marks',
   addressStatus: 'not_needed',

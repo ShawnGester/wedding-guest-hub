@@ -658,6 +658,28 @@ body.is-reordering {
   grid-column: span 2;
 }
 
+.plus-one-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.plus-one-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.plus-one-editor .input {
+  margin-top: 0;
+}
+
+.plus-one-editor .row {
+  align-items: center;
+}
+
 .check {
   flex-direction: row !important;
   align-items: center;

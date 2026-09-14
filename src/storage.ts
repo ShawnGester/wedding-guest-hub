@@ -1,3 +1,4 @@
+import { plusOneNames, seatedCount } from './lib/plusOnes'
 import { createEmptyData, type AppData } from './types'
 
 const KEY = 'wedding-guest-hub:v1'
@@ -9,14 +10,19 @@ export function normalizeAppData(raw: unknown): AppData | null {
   return {
     ...createEmptyData(),
     ...parsed,
-    guests: parsed.guests.map((g) => ({
-      ...g,
-      plusOne: Boolean((g as { plusOne?: boolean }).plusOne),
-      plusOneName: (g as { plusOneName?: string }).plusOneName ?? '',
-      saveTheDateAcknowledged: Boolean(
-        (g as { saveTheDateAcknowledged?: boolean }).saveTheDateAcknowledged,
-      ),
-    })),
+    guests: parsed.guests.map((g) => {
+      const plusOnes = plusOneNames(g)
+      return {
+        ...g,
+        plusOnes,
+        plusOne: plusOnes.length > 0,
+        plusOneName: plusOnes.join(', '),
+        partySize: Math.max(g.partySize || 1, seatedCount({ plusOnes })),
+        saveTheDateAcknowledged: Boolean(
+          (g as { saveTheDateAcknowledged?: boolean }).saveTheDateAcknowledged,
+        ),
+      }
+    }),
     campaigns: Array.isArray(parsed.campaigns) ? parsed.campaigns : [],
     settings: {
       ...createEmptyData().settings,

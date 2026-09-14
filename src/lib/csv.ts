@@ -1,3 +1,4 @@
+import { plusOneNames, splitPlusOneList, withPlusOnes } from './plusOnes'
 import type { Guest, RsvpStatus } from '../types'
 import { uid } from './id'
 
@@ -130,7 +131,10 @@ export function mergeRsvpCsv(
     const tagsRaw = pick(map, ['tags', 'tag'])
     const partyRaw = pick(map, ['partysize', 'guests', 'headcount'])
     const plusOneRaw = pick(map, ['plusone', 'plus1', 'hasplusone', 'plusoneguest'])
-    const plusOneName = pick(map, ['plusonename', 'plus1name', 'guestname', 'plusoneguestname'])
+    const plusOneName = pick(map, ['plusonename', 'plus1name', 'plusones', 'guestname', 'plusoneguestname'])
+    const hasPlusOneNameCol = normHeaders.some((h) =>
+      ['plusonename', 'plus1name', 'plusones', 'guestname', 'plusoneguestname'].includes(h),
+    )
     const physicalRaw = pick(map, ['physicalinvite', 'physical'])
     const rsvpRaw = pick(map, ['rsvpstatus', 'rsvp'])
     const addressStatusRaw = pick(map, ['addressstatus'])
@@ -141,6 +145,7 @@ export function mergeRsvpCsv(
     const idx = findGuestIndex(available, email, firstName, lastName)
     const partySize = partyRaw ? Math.max(1, Number.parseInt(partyRaw, 10) || 1) : undefined
     const plusOne = parseBool(plusOneRaw)
+    const importedPlusOnes = hasPlusOneNameCol ? splitPlusOneList(plusOneName) : undefined
     const physicalInvite = parseBool(physicalRaw)
     const tags = tagsRaw
       ? tagsRaw
@@ -157,9 +162,10 @@ export function mergeRsvpCsv(
         email,
         phone: phone || undefined,
         household: household || undefined,
-        plusOne: plusOne ?? Boolean(plusOneName),
-        plusOneName: plusOneName || undefined,
-        partySize: partySize ?? (plusOne || plusOneName ? 2 : 1),
+        plusOnes: importedPlusOnes ?? [],
+        plusOne: (importedPlusOnes?.length ?? 0) > 0 || Boolean(plusOne),
+        plusOneName: (importedPlusOnes ?? []).join(', ') || undefined,
+        partySize: Math.max(partySize ?? 1, 1 + (importedPlusOnes?.length ?? 0)),
         tags: tags ?? [],
         notes: notes || undefined,
         rsvpStatus: (rsvpRaw as RsvpStatus) || (mode === 'rsvp' ? 'submitted' : 'unknown'),
@@ -190,10 +196,21 @@ export function mergeRsvpCsv(
     if (household) g.household = household
     if (notes) g.notes = notes
     if (tags) g.tags = tags
-    if (plusOne != null) g.plusOne = plusOne
-    if (plusOneName) g.plusOneName = plusOneName
-    if (plusOneName && plusOne == null) g.plusOne = true
-    if (partySize != null) g.partySize = partySize
+    if (importedPlusOnes) {
+      const syncedPlus = withPlusOnes(g, importedPlusOnes)
+      g.plusOnes = syncedPlus.plusOnes
+      g.plusOne = syncedPlus.plusOne
+      g.plusOneName = syncedPlus.plusOneName
+      g.partySize = Math.max(partySize ?? syncedPlus.partySize, syncedPlus.partySize)
+    } else if (plusOne === false) {
+      const cleared = withPlusOnes(g, [])
+      g.plusOnes = cleared.plusOnes
+      g.plusOne = false
+      g.plusOneName = ''
+      g.partySize = partySize ?? 1
+    } else if (partySize != null) {
+      g.partySize = Math.max(partySize, 1 + plusOneNames(g).length)
+    }
     if (physicalInvite != null) g.physicalInvite = physicalInvite
     if (address) g.mailingAddress = address
     if (rsvpRaw) g.rsvpStatus = rsvpRaw as RsvpStatus
@@ -306,6 +323,7 @@ function guestRow(g: {
   firstName: string
   lastName: string
   email: string
+  plusOnes?: string[]
   plusOne?: boolean
   plusOneName?: string
   phone?: string
@@ -316,15 +334,16 @@ function guestRow(g: {
   saveTheDateAcknowledged?: boolean
   notes?: string
 }): string {
+  const names = plusOneNames(g)
   return [
     g.firstName,
     g.lastName,
     g.email,
-    String(Boolean(g.plusOne)),
-    g.plusOneName ?? '',
+    String(names.length > 0),
+    names.join(', '),
     g.phone ?? '',
     g.household ?? '',
-    String(g.partySize),
+    String(Math.max(g.partySize || 1, 1 + names.length)),
     g.tags.join(';'),
     g.saveTheDateStatus,
     String(Boolean(g.saveTheDateAcknowledged)),
@@ -342,11 +361,12 @@ export function guestCsvTemplate(): string {
       firstName: 'Alex',
       lastName: 'Example',
       email: 'alex.example@email.com',
+      plusOnes: ['Choco Marks', 'Sam Example'],
       plusOne: true,
-      plusOneName: 'Choco Marks',
+      plusOneName: 'Choco Marks, Sam Example',
       phone: '555-0100',
       household: 'Example household',
-      partySize: 2,
+      partySize: 3,
       tags: ['family'],
       saveTheDateStatus: 'not_sent',
       saveTheDateAcknowledged: false,
