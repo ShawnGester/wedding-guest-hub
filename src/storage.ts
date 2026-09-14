@@ -12,8 +12,18 @@ export function normalizeAppData(raw: unknown): AppData | null {
     ...parsed,
     guests: parsed.guests.map((g) => {
       const plusOnes = plusOneNames(g)
+      const rest = { ...g } as typeof g & {
+        physicalInvite?: boolean
+        addressStatus?: string
+        mailingAddress?: string
+        addressSubmittedAt?: string
+      }
+      delete rest.physicalInvite
+      delete rest.addressStatus
+      delete rest.mailingAddress
+      delete rest.addressSubmittedAt
       return {
-        ...g,
+        ...rest,
         plusOnes,
         plusOne: plusOnes.length > 0,
         plusOneName: plusOnes.join(', '),
@@ -24,14 +34,20 @@ export function normalizeAppData(raw: unknown): AppData | null {
       }
     }),
     campaigns: Array.isArray(parsed.campaigns) ? parsed.campaigns : [],
-    settings: {
-      ...createEmptyData().settings,
-      ...parsed.settings,
-      emailjs: {
-        ...createEmptyData().settings.emailjs,
-        ...parsed.settings?.emailjs,
-      },
-    },
+    settings: (() => {
+      const saved = { ...(parsed.settings ?? {}) } as typeof parsed.settings & {
+        addressFormUrl?: string
+      }
+      delete saved.addressFormUrl
+      return {
+        ...createEmptyData().settings,
+        ...saved,
+        emailjs: {
+          ...createEmptyData().settings.emailjs,
+          ...saved.emailjs,
+        },
+      }
+    })(),
   }
 }
 

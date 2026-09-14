@@ -47,14 +47,6 @@ export function SettingsPanel() {
           />
         </label>
         <label className="span-2">
-          Address intake form URL (physical invites)
-          <input
-            className="input"
-            value={s.addressFormUrl ?? ''}
-            onChange={(e) => setS({ ...s, addressFormUrl: e.target.value })}
-          />
-        </label>
-        <label className="span-2">
           Save-the-date acknowledgement form URL
           <input
             className="input"

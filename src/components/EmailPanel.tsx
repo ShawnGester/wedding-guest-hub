@@ -15,7 +15,7 @@ const SAVE_THE_DATE_IMAGE =
 
 const ACK_FORM_URL = 'https://forms.gle/1t4K36a7Kwcoh6EE7'
 
-const DEFAULT_BODY = `Dear {{firstName}},
+const DEFAULT_BODY = `Dear {{guestNames}},
 
 We're so excited to celebrate with you!
 
@@ -26,9 +26,9 @@ Our wedding will take place in Vancouver, British Columbia, Canada, at Furry Cre
 Please confirm you received this: ${ACK_FORM_URL}
 
 With love,
-{{coupleNames}}`
+{{ourNames}}`
 
-const DEFAULT_BODY_HTML = `<p style="font-family:Georgia,serif;font-size:16px;line-height:1.5;color:#14221f;">Dear {{firstName}},</p>
+const DEFAULT_BODY_HTML = `<p style="font-family:Georgia,serif;font-size:16px;line-height:1.5;color:#14221f;">Dear {{guestNames}},</p>
 <p style="margin:16px 0;">
   <img src="${SAVE_THE_DATE_IMAGE}" alt="Save the date — Shawn and Mary" width="600" style="max-width:100%;height:auto;border:0;display:block;" />
 </p>
@@ -46,11 +46,9 @@ const SAMPLE_GUEST: Guest = {
   partySize: 1,
   tags: [],
   rsvpStatus: 'unknown',
-  physicalInvite: false,
   plusOnes: ['Choco Marks'],
   plusOne: true,
   plusOneName: 'Choco Marks',
-  addressStatus: 'not_needed',
   saveTheDateStatus: 'not_sent',
   saveTheDateAcknowledged: false,
   createdAt: '',
@@ -257,8 +255,8 @@ export function EmailPanel() {
             />
           </label>
           <p className="tiny muted">
-            Tokens: <code>{'{{firstName}}'}</code> (includes a plus one: Caroline and Choco),{' '}
-            <code>{'{{coupleNames}}'}</code>
+            Tokens: <code>{'{{guestNames}}'}</code> (includes a plus one: Caroline and Choco),{' '}
+            <code>{'{{ourNames}}'}</code>
           </p>
 
           <div className="stack">

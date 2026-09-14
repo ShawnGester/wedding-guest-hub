@@ -25,6 +25,10 @@ export function greetingName(guest: Guest): string {
 function applyMessageTokens(template: string, settings: AppSettings, guest: Guest): string {
   const greeting = greetingName(guest)
   return template
+    .replaceAll('{{guestNames}}', greeting)
+    .replaceAll('{{ourNames}}', settings.coupleNames)
+    // leftover aliases so already-saved drafts do not send the literal token
+    .replaceAll('{{names}}', greeting)
     .replaceAll('{{greeting}}', greeting)
     .replaceAll('{{firstName}}', greeting)
     .replaceAll('{{coupleNames}}', settings.coupleNames)

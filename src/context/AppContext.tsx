@@ -34,9 +34,6 @@ interface Metrics {
   rsvpSubmitted: number
   rsvpUnknown: number
   rsvpRate: number
-  physicalInvites: number
-  addressPending: number
-  addressSubmitted: number
   saveTheDateSent: number
   saveTheDatePending: number
   saveTheDateAcknowledged: number
@@ -53,7 +50,7 @@ interface AppContextValue {
   updateGuest: (id: string, patch: Partial<Guest>) => void
   deleteGuest: (id: string) => void
   reorderGuests: (activeId: string, overId: string) => void
-  importRsvpCsv: (csv: string, mode: 'rsvp' | 'address') => {
+  importRsvpCsv: (csv: string) => {
     matched: number
     created: number
     removed: number
@@ -87,13 +84,6 @@ function computeMetrics(guests: Guest[]): Metrics {
   const withEmail = guests.filter((g) => g.email.trim()).length
   const rsvpSubmitted = guests.filter((g) => g.rsvpStatus === 'submitted').length
   const rsvpUnknown = guests.filter((g) => g.rsvpStatus === 'unknown').length
-  const physicalInvites = guests.filter((g) => g.physicalInvite).length
-  const addressPending = guests.filter(
-    (g) => g.physicalInvite && g.addressStatus === 'pending',
-  ).length
-  const addressSubmitted = guests.filter(
-    (g) => g.physicalInvite && g.addressStatus === 'submitted',
-  ).length
   const saveTheDateSent = guests.filter((g) => g.saveTheDateStatus === 'sent').length
   const saveTheDatePending = guests.filter(
     (g) => g.email.trim() && g.saveTheDateStatus !== 'sent',
@@ -106,9 +96,6 @@ function computeMetrics(guests: Guest[]): Metrics {
     rsvpSubmitted,
     rsvpUnknown,
     rsvpRate: guests.length ? Math.round((rsvpSubmitted / guests.length) * 100) : 0,
-    physicalInvites,
-    addressPending,
-    addressSubmitted,
     saveTheDateSent,
     saveTheDatePending,
     saveTheDateAcknowledged,
@@ -283,8 +270,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
           partySize: 1,
           tags: [],
           rsvpStatus: 'unknown',
-          physicalInvite: false,
-          addressStatus: 'not_needed',
           saveTheDateStatus: 'not_sent',
           saveTheDateAcknowledged: false,
           createdAt: now,
@@ -317,10 +302,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return { ...d, guests }
         })
       },
-      importRsvpCsv: (csv, mode) => {
+      importRsvpCsv: (csv) => {
         let result = { matched: 0, created: 0, removed: 0 }
         setData((d) => {
-          const merged = mergeRsvpCsv(d.guests, csv, mode)
+          const merged = mergeRsvpCsv(d.guests, csv)
           result = {
             matched: merged.matched,
             created: merged.created,

@@ -1,5 +1,4 @@
 export type RsvpStatus = 'unknown' | 'submitted' | 'declined'
-export type AddressStatus = 'not_needed' | 'pending' | 'submitted'
 export type SaveTheDateStatus = 'not_sent' | 'queued' | 'sent' | 'failed'
 
 export interface Guest {
@@ -21,11 +20,6 @@ export interface Guest {
   /** Google intake / RSVP form */
   rsvpStatus: RsvpStatus
   rsvpSubmittedAt?: string
-  /** Physical invite mailing track */
-  physicalInvite: boolean
-  addressStatus: AddressStatus
-  mailingAddress?: string
-  addressSubmittedAt?: string
   /** Save the date email track */
   saveTheDateStatus: SaveTheDateStatus
   saveTheDateSentAt?: string
@@ -64,7 +58,6 @@ export type ThemeMode = 'light' | 'dark'
 export interface AppSettings {
   coupleNames: string
   googleFormUrl?: string
-  addressFormUrl?: string
   /** Google Form: confirm save-the-date received */
   saveTheDateAckFormUrl?: string
   /**
@@ -96,7 +89,6 @@ export interface AppData {
 export const DEFAULT_SETTINGS: AppSettings = {
   coupleNames: 'Shawn and Mary',
   googleFormUrl: '',
-  addressFormUrl: '',
   saveTheDateAckFormUrl: 'https://forms.gle/1t4K36a7Kwcoh6EE7',
   saveTheDateAckResponsesUrl: '',
   saveTheDateAckAutoRefresh: true,

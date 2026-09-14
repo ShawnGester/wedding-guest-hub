@@ -1,6 +1,6 @@
 # Wedding Guest Hub
 
-Lightweight, local-first wedding guest manager for ~120 guests: emails, Google Form RSVP tracking, physical-invite address intakes, and save-the-date sending from the browser. Hosted for free on GitHub Pages.
+Lightweight, local-first wedding guest manager for ~120 guests: emails, Google Form RSVP tracking, and save-the-date sending from the browser. Hosted for free on GitHub Pages.
 
 **Location (sibling of `pokemon-grading-advisor`):**
 
@@ -11,7 +11,6 @@ Lightweight, local-first wedding guest manager for ~120 guests: emails, Google F
 
 - Guest list with email, household, tags, party size, notes
 - Downloadable guest CSV template (same columns as export) for manual intake, plus CSV import from Google Form responses
-- Separate physical-invite track + address intake status / mailing address
 - Save-the-date composer (subject, HTML/text, links, photo/file attachments)
 - Send from the site via free [EmailJS](https://www.emailjs.com/) (or mailto fallback)
 - Dashboard metrics, optional PIN lock, JSON backup export/import

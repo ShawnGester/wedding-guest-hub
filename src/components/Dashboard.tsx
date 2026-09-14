@@ -10,11 +10,6 @@ export function Dashboard() {
       hint: `${metrics.rsvpRate}% · ${metrics.rsvpUnknown} open`,
     },
     {
-      label: 'Physical invites',
-      value: metrics.physicalInvites,
-      hint: `${metrics.addressSubmitted} addresses · ${metrics.addressPending} pending`,
-    },
-    {
       label: 'Save the dates sent',
       value: metrics.saveTheDateSent,
       hint: `${metrics.saveTheDateAcknowledged} acknowledged · ${metrics.saveTheDatePending} still to send`,
@@ -27,7 +22,7 @@ export function Dashboard() {
         <div>
           <p className="eyebrow">Overview</p>
           <h2>{data.settings.coupleNames || 'Wedding Guest Hub'}</h2>
-          <p className="muted">Guest list, RSVPs, physical invites, and save-the-dates.</p>
+          <p className="muted">Guest list, RSVPs, and save-the-dates.</p>
         </div>
         <div className="row gap wrap">
           {data.settings.googleFormUrl ? (
@@ -38,16 +33,6 @@ export function Dashboard() {
               rel="noreferrer"
             >
               Open RSVP form
-            </a>
-          ) : null}
-          {data.settings.addressFormUrl ? (
-            <a
-              className="btn"
-              href={data.settings.addressFormUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Open address form
             </a>
           ) : null}
         </div>
@@ -66,7 +51,7 @@ export function Dashboard() {
       <div className="tips">
         <h3>Suggested workflow</h3>
         <ol>
-          <li>Add guests (or import a spreadsheet) and mark who gets a physical invite.</li>
+          <li>Add guests, or import a spreadsheet so the list matches that file.</li>
           <li>
             Export your guest spreadsheet and import here to sync the list exactly (add /
             update / remove). Export save-the-date acknowledgement responses from Google

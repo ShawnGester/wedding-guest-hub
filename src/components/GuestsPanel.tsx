@@ -144,11 +144,11 @@ export function GuestsPanel() {
     if (target) reorderGuests(id, target)
   }
 
-  async function onImportFile(file: File, mode: 'rsvp' | 'address') {
+  async function onImportFile(file: File) {
     const text = await file.text()
-    const result = importRsvpCsv(text, mode)
+    const result = importRsvpCsv(text)
     setImportMsg(
-      `Synced ${mode}: ${result.matched} updated, ${result.created} added, ${result.removed} removed.`,
+      `Synced RSVP CSV: ${result.matched} updated, ${result.created} added, ${result.removed} removed.`,
     )
   }
 
@@ -168,7 +168,7 @@ export function GuestsPanel() {
         <div>
           <h2>Guest List</h2>
           <p className="muted">
-            Track emails, Google form RSVPs, and physical-invite address intakes.
+            Track emails, Google form RSVPs, and save-the-dates.
           </p>
         </div>
         <div className="row gap">
@@ -233,7 +233,7 @@ export function GuestsPanel() {
               aria-describedby="tip-rsvp-sync"
               onChange={(e) => {
                 const f = e.target.files?.[0]
-                if (f) void onImportFile(f, 'rsvp')
+                if (f) void onImportFile(f)
                 e.target.value = ''
               }}
             />
@@ -241,27 +241,6 @@ export function GuestsPanel() {
           <span id="tip-rsvp-sync" className="tip-bubble" role="tooltip">
             Makes the guest list match that file exactly. Updates matches, adds new rows, removes
             anyone not in the file, and marks those rows as RSVP submitted.
-          </span>
-        </span>
-        <span className="tip">
-          <label className="file-btn" aria-describedby="tip-address-sync">
-            Sync from address intake CSV
-            <input
-              type="file"
-              className="file-btn-input"
-              accept=".csv,text/csv"
-              aria-label="Sync from address intake CSV"
-              aria-describedby="tip-address-sync"
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) void onImportFile(f, 'address')
-                e.target.value = ''
-              }}
-            />
-          </label>
-          <span id="tip-address-sync" className="tip-bubble" role="tooltip">
-            Same full sync for physical-invite addresses. Matched rows are marked as a physical
-            invite with address submitted, and people not in the file are removed.
           </span>
         </span>
         <span className="tip">

@@ -88,11 +88,7 @@ function parseBool(v: string): boolean | undefined {
  * Sync guests to the spreadsheet exactly: update matches, add new CSV rows,
  * remove site guests not present in the CSV. Match by email, then full name.
  */
-export function mergeRsvpCsv(
-  guests: Guest[],
-  csvText: string,
-  mode: 'rsvp' | 'address' = 'rsvp',
-): MergeRsvpResult {
+export function mergeRsvpCsv(guests: Guest[], csvText: string): MergeRsvpResult {
   const { headers, rows } = parseCsv(csvText)
   if (!headers.length) return { guests, matched: 0, created: 0, removed: 0 }
 
@@ -119,12 +115,6 @@ export function mergeRsvpCsv(
       pick(map, ['lastname', 'last', 'surname', 'familyname']) ||
       fullName.split(/\s+/).slice(1).join(' ') ||
       ''
-    const address = pick(map, [
-      'address',
-      'mailingaddress',
-      'streetaddress',
-      'fulladdress',
-    ])
     const phone = pick(map, ['phone', 'phonenumber', 'mobile'])
     const household = pick(map, ['household', 'party', 'family'])
     const notes = pick(map, ['notes', 'note', 'comments'])
@@ -135,9 +125,7 @@ export function mergeRsvpCsv(
     const hasPlusOneNameCol = normHeaders.some((h) =>
       ['plusonename', 'plus1name', 'plusones', 'guestname', 'plusoneguestname'].includes(h),
     )
-    const physicalRaw = pick(map, ['physicalinvite', 'physical'])
     const rsvpRaw = pick(map, ['rsvpstatus', 'rsvp'])
-    const addressStatusRaw = pick(map, ['addressstatus'])
     const stdRaw = pick(map, ['savethedatestatus', 'stdstatus'])
 
     if (!email && !firstName) continue
@@ -146,7 +134,6 @@ export function mergeRsvpCsv(
     const partySize = partyRaw ? Math.max(1, Number.parseInt(partyRaw, 10) || 1) : undefined
     const plusOne = parseBool(plusOneRaw)
     const importedPlusOnes = hasPlusOneNameCol ? splitPlusOneList(plusOneName) : undefined
-    const physicalInvite = parseBool(physicalRaw)
     const tags = tagsRaw
       ? tagsRaw
           .split(/[;,]/)
@@ -168,14 +155,8 @@ export function mergeRsvpCsv(
         partySize: Math.max(partySize ?? 1, 1 + (importedPlusOnes?.length ?? 0)),
         tags: tags ?? [],
         notes: notes || undefined,
-        rsvpStatus: (rsvpRaw as RsvpStatus) || (mode === 'rsvp' ? 'submitted' : 'unknown'),
-        rsvpSubmittedAt: mode === 'rsvp' || rsvpRaw === 'submitted' ? now : undefined,
-        physicalInvite: physicalInvite ?? mode === 'address',
-        addressStatus:
-          (addressStatusRaw as Guest['addressStatus']) ||
-          (mode === 'address' ? 'submitted' : 'not_needed'),
-        mailingAddress: address || undefined,
-        addressSubmittedAt: mode === 'address' || addressStatusRaw === 'submitted' ? now : undefined,
+        rsvpStatus: (rsvpRaw as RsvpStatus) || 'submitted',
+        rsvpSubmittedAt: now,
         saveTheDateStatus: (stdRaw as Guest['saveTheDateStatus']) || 'not_sent',
         saveTheDateAcknowledged: false,
         createdAt: now,
@@ -211,21 +192,11 @@ export function mergeRsvpCsv(
     } else if (partySize != null) {
       g.partySize = Math.max(partySize, 1 + plusOneNames(g).length)
     }
-    if (physicalInvite != null) g.physicalInvite = physicalInvite
-    if (address) g.mailingAddress = address
     if (rsvpRaw) g.rsvpStatus = rsvpRaw as RsvpStatus
-    if (addressStatusRaw) g.addressStatus = addressStatusRaw as Guest['addressStatus']
     if (stdRaw) g.saveTheDateStatus = stdRaw as Guest['saveTheDateStatus']
 
-    if (mode === 'rsvp') {
-      g.rsvpStatus = 'submitted'
-      g.rsvpSubmittedAt = now
-    } else {
-      g.physicalInvite = true
-      g.addressStatus = 'submitted'
-      g.addressSubmittedAt = now
-      if (address) g.mailingAddress = address
-    }
+    g.rsvpStatus = 'submitted'
+    g.rsvpSubmittedAt = now
     g.updatedAt = now
     synced.push(g)
     matched++
