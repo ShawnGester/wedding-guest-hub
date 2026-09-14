@@ -22,6 +22,7 @@ export function GuestsPanel() {
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [creatingDraft, setCreatingDraft] = useState<Guest | null>(null)
   const [importMsg, setImportMsg] = useState('')
   const [ackRefreshing, setAckRefreshing] = useState(false)
   const [dragId, setDragId] = useState<string | null>(null)
@@ -49,7 +50,8 @@ export function GuestsPanel() {
     })
   }, [data.guests, query, filter])
 
-  const editing = data.guests.find((g) => g.id === editingId) ?? null
+  const editing = editingId ? (data.guests.find((g) => g.id === editingId) ?? null) : null
+  const editorGuest = creatingDraft ?? editing
   const hasAckFeed = Boolean(data.settings.saveTheDateAckResponsesUrl?.trim())
 
   async function refreshAcks() {
@@ -179,8 +181,8 @@ export function GuestsPanel() {
             type="button"
             className="btn btn-primary"
             onClick={() => {
-              const g = addGuest({ firstName: 'New', lastName: 'Guest' })
-              setEditingId(g.id)
+              setEditingId(null)
+              setCreatingDraft(newGuestDraft())
             }}
           >
             Add guest
@@ -348,7 +350,14 @@ export function GuestsPanel() {
                 </td>
                 <td className="actions-cell">
                   <div className="row gap end">
-                    <button type="button" className="btn btn-ghost" onClick={() => setEditingId(g.id)}>
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => {
+                        setCreatingDraft(null)
+                        setEditingId(g.id)
+                      }}
+                    >
                       Edit
                     </button>
                     <button
@@ -413,18 +422,58 @@ export function GuestsPanel() {
           )
         : null}
 
-      {editing ? (
+      {editorGuest ? (
         <GuestEditor
-          guest={editing}
-          onClose={() => setEditingId(null)}
-          onSave={(patch) => {
-            updateGuest(editing.id, patch)
+          key={creatingDraft ? 'new' : editorGuest.id}
+          guest={editorGuest}
+          isNew={Boolean(creatingDraft)}
+          onClose={() => {
+            setCreatingDraft(null)
             setEditingId(null)
+          }}
+          onSave={(patch) => {
+            if (creatingDraft) {
+              addGuest(fieldsForNewGuest({ ...creatingDraft, ...patch }))
+              setCreatingDraft(null)
+              return
+            }
+            if (editing) {
+              updateGuest(editing.id, patch)
+              setEditingId(null)
+            }
           }}
         />
       ) : null}
     </section>
   )
+}
+
+function newGuestDraft(): Guest {
+  const now = new Date().toISOString()
+  return {
+    id: 'new',
+    firstName: 'New',
+    lastName: 'Guest',
+    email: '',
+    plusOnes: [],
+    plusOne: false,
+    plusOneName: '',
+    partySize: 1,
+    tags: [],
+    rsvpStatus: 'unknown',
+    saveTheDateStatus: 'not_sent',
+    saveTheDateAcknowledged: false,
+    createdAt: now,
+    updatedAt: now,
+  }
+}
+
+function fieldsForNewGuest(guest: Guest): Partial<Guest> {
+  const fields: Partial<Guest> = { ...guest }
+  delete fields.id
+  delete fields.createdAt
+  delete fields.updatedAt
+  return fields
 }
 
 function syncPlusOneDraft(guest: Guest, names: string[]): Guest {
@@ -444,10 +493,12 @@ function StatusPill({ value }: { value: string }) {
 
 function GuestEditor({
   guest,
+  isNew = false,
   onClose,
   onSave,
 }: {
   guest: Guest
+  isNew?: boolean
   onClose: () => void
   onSave: (patch: Partial<Guest>) => void
 }) {
@@ -460,11 +511,11 @@ function GuestEditor({
       <div
         className="modal"
         role="dialog"
-        aria-label="Edit guest"
+        aria-label={isNew ? 'Add guest' : 'Edit guest'}
         onClick={(e) => e.stopPropagation()}
       >
         <h3>
-          Edit {draft.firstName} {draft.lastName}
+          {isNew ? 'Add guest' : `Edit ${draft.firstName} ${draft.lastName}`}
         </h3>
         <div className="form-grid">
           <label>

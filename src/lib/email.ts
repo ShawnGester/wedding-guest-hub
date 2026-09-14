@@ -7,16 +7,17 @@ export function emailjsConfigured(settings: AppSettings): boolean {
   return Boolean(publicKey && serviceId && templateId)
 }
 
-/** First name of a plus-one full name ("Choco Marks" → "Choco"). */
-export function plusOneFirstName(name?: string): string {
-  return (name ?? '').trim().split(/\s+/).filter(Boolean)[0] ?? ''
+/** Primary guest as addressed in email: "Caroline Smith", or first name if no last name. */
+function primaryGuestName(guest: Guest): string {
+  return [guest.firstName, guest.lastName]
+    .map((part) => (part ?? '').trim())
+    .filter(Boolean)
+    .join(' ')
 }
 
-/** Greeting used in emails: "Caroline", "Caroline and Choco", or "Caroline, Choco, and Sam". */
+/** Greeting used in emails: "Caroline Smith", "Caroline Smith and Choco Marks", or "Caroline Smith, Choco Marks, and Sam Lee". Plus-one names are used as entered. */
 export function greetingName(guest: Guest): string {
-  const names = [guest.firstName.trim(), ...plusOneNames(guest).map(plusOneFirstName)].filter(
-    Boolean,
-  )
+  const names = [primaryGuestName(guest), ...plusOneNames(guest)].filter(Boolean)
   if (names.length <= 1) return names[0] ?? ''
   if (names.length === 2) return `${names[0]} and ${names[1]}`
   return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`

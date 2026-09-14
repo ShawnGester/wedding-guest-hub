@@ -255,7 +255,7 @@ export function EmailPanel() {
             />
           </label>
           <p className="tiny muted">
-            Tokens: <code>{'{{guestNames}}'}</code> (includes a plus one: Caroline and Choco),{' '}
+            Tokens: <code>{'{{guestNames}}'}</code> (includes a plus one: Caroline Smith and Choco Marks),{' '}
             <code>{'{{ourNames}}'}</code>
           </p>
 
