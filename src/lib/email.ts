@@ -6,9 +6,24 @@ export function emailjsConfigured(settings: AppSettings): boolean {
   return Boolean(publicKey && serviceId && templateId)
 }
 
+/** First name of a plus-one full name ("Choco Marks" → "Choco"). */
+export function plusOneFirstName(name?: string): string {
+  return (name ?? '').trim().split(/\s+/).filter(Boolean)[0] ?? ''
+}
+
+/** Greeting used in emails: "Caroline" or "Caroline and Choco". */
+export function greetingName(guest: Guest): string {
+  const primary = guest.firstName.trim()
+  const extra = guest.plusOne ? plusOneFirstName(guest.plusOneName) : ''
+  if (primary && extra) return `${primary} and ${extra}`
+  return primary || extra
+}
+
 function applyMessageTokens(template: string, settings: AppSettings, guest: Guest): string {
+  const greeting = greetingName(guest)
   return template
-    .replaceAll('{{firstName}}', guest.firstName)
+    .replaceAll('{{greeting}}', greeting)
+    .replaceAll('{{firstName}}', greeting)
     .replaceAll('{{coupleNames}}', settings.coupleNames)
 }
 
@@ -55,7 +70,7 @@ export function buildSaveTheDateContent(
     html,
     text,
     toEmail: guest.email,
-    toName: `${guest.firstName} ${guest.lastName}`.trim(),
+    toName: greetingName(guest) || `${guest.firstName} ${guest.lastName}`.trim(),
     fromName: settings.fromName || settings.coupleNames,
   }
 }

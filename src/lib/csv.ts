@@ -129,6 +129,8 @@ export function mergeRsvpCsv(
     const notes = pick(map, ['notes', 'note', 'comments'])
     const tagsRaw = pick(map, ['tags', 'tag'])
     const partyRaw = pick(map, ['partysize', 'guests', 'headcount'])
+    const plusOneRaw = pick(map, ['plusone', 'plus1', 'hasplusone', 'plusoneguest'])
+    const plusOneName = pick(map, ['plusonename', 'plus1name', 'guestname', 'plusoneguestname'])
     const physicalRaw = pick(map, ['physicalinvite', 'physical'])
     const rsvpRaw = pick(map, ['rsvpstatus', 'rsvp'])
     const addressStatusRaw = pick(map, ['addressstatus'])
@@ -138,6 +140,7 @@ export function mergeRsvpCsv(
 
     const idx = findGuestIndex(available, email, firstName, lastName)
     const partySize = partyRaw ? Math.max(1, Number.parseInt(partyRaw, 10) || 1) : undefined
+    const plusOne = parseBool(plusOneRaw)
     const physicalInvite = parseBool(physicalRaw)
     const tags = tagsRaw
       ? tagsRaw
@@ -154,7 +157,9 @@ export function mergeRsvpCsv(
         email,
         phone: phone || undefined,
         household: household || undefined,
-        partySize: partySize ?? 1,
+        plusOne: plusOne ?? Boolean(plusOneName),
+        plusOneName: plusOneName || undefined,
+        partySize: partySize ?? (plusOne || plusOneName ? 2 : 1),
         tags: tags ?? [],
         notes: notes || undefined,
         rsvpStatus: (rsvpRaw as RsvpStatus) || (mode === 'rsvp' ? 'submitted' : 'unknown'),
@@ -185,6 +190,9 @@ export function mergeRsvpCsv(
     if (household) g.household = household
     if (notes) g.notes = notes
     if (tags) g.tags = tags
+    if (plusOne != null) g.plusOne = plusOne
+    if (plusOneName) g.plusOneName = plusOneName
+    if (plusOneName && plusOne == null) g.plusOne = true
     if (partySize != null) g.partySize = partySize
     if (physicalInvite != null) g.physicalInvite = physicalInvite
     if (address) g.mailingAddress = address
@@ -279,6 +287,8 @@ export const GUEST_CSV_HEADERS = [
   'firstName',
   'lastName',
   'email',
+  'plusOne',
+  'plusOneName',
   'phone',
   'household',
   'partySize',
@@ -300,6 +310,8 @@ function guestRow(g: {
   firstName: string
   lastName: string
   email: string
+  plusOne?: boolean
+  plusOneName?: string
   phone?: string
   household?: string
   partySize: number
@@ -316,6 +328,8 @@ function guestRow(g: {
     g.firstName,
     g.lastName,
     g.email,
+    String(Boolean(g.plusOne)),
+    g.plusOneName ?? '',
     g.phone ?? '',
     g.household ?? '',
     String(g.partySize),
@@ -340,6 +354,8 @@ export function guestCsvTemplate(): string {
       firstName: 'Alex',
       lastName: 'Example',
       email: 'alex.example@email.com',
+      plusOne: true,
+      plusOneName: 'Choco Marks',
       phone: '555-0100',
       household: 'Example household',
       partySize: 2,

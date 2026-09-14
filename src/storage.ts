@@ -15,6 +15,8 @@ export function loadData(): AppData {
       ...parsed,
       guests: parsed.guests.map((g) => ({
         ...g,
+        plusOne: Boolean((g as { plusOne?: boolean }).plusOne),
+        plusOneName: (g as { plusOneName?: string }).plusOneName ?? '',
         saveTheDateAcknowledged: Boolean(
           (g as { saveTheDateAcknowledged?: boolean }).saveTheDateAcknowledged,
         ),

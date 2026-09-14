@@ -9,6 +9,10 @@ export interface Guest {
   email: string
   phone?: string
   household?: string
+  /** Extra guest on this invitation (same email) */
+  plusOne: boolean
+  /** Full name of the plus one, e.g. "Choco Marks" */
+  plusOneName?: string
   partySize: number
   tags: string[]
   notes?: string

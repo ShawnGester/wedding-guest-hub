@@ -31,7 +31,7 @@ export function GuestsPanel() {
       if (filter === 'std_pending' && g.saveTheDateStatus === 'sent') return false
       if (filter === 'ack_pending' && g.saveTheDateAcknowledged) return false
       if (!q) return true
-      const hay = `${g.firstName} ${g.lastName} ${g.email} ${g.household ?? ''} ${g.tags.join(' ')}`.toLowerCase()
+      const hay = `${g.firstName} ${g.lastName} ${g.plusOneName ?? ''} ${g.email} ${g.household ?? ''} ${g.tags.join(' ')}`.toLowerCase()
       return hay.includes(q)
     })
   }, [data.guests, query, filter])
@@ -188,6 +188,8 @@ export function GuestsPanel() {
           <thead>
             <tr>
               <th>Name</th>
+              <th>Plus 1</th>
+              <th>Plus 1 name</th>
               <th>Email</th>
               <th>RSVP form</th>
               <th>Physical</th>
@@ -206,6 +208,8 @@ export function GuestsPanel() {
                   </strong>
                   {g.household ? <div className="tiny muted">{g.household}</div> : null}
                 </td>
+                <td>{g.plusOne ? 'Yes' : '—'}</td>
+                <td>{g.plusOne && g.plusOneName?.trim() ? g.plusOneName : '—'}</td>
                 <td className="mono">{g.email || '—'}</td>
                 <td>
                   <StatusPill value={g.rsvpStatus} />
@@ -242,7 +246,7 @@ export function GuestsPanel() {
             ))}
             {!guests.length ? (
               <tr>
-                <td colSpan={8} className="muted center">
+                <td colSpan={10} className="muted center">
                   No guests match this view. Add someone or clear filters.
                 </td>
               </tr>
@@ -310,6 +314,32 @@ function GuestEditor({
               onChange={(e) => set('lastName', e.target.value)}
             />
           </label>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={Boolean(draft.plusOne)}
+              onChange={(e) => {
+                const on = e.target.checked
+                setDraft((d) => ({
+                  ...d,
+                  plusOne: on,
+                  partySize: on && d.partySize < 2 ? 2 : d.partySize,
+                }))
+              }}
+            />
+            Plus 1
+          </label>
+          {draft.plusOne ? (
+            <label>
+              Plus 1 name
+              <input
+                className="input"
+                placeholder="Choco Marks"
+                value={draft.plusOneName ?? ''}
+                onChange={(e) => set('plusOneName', e.target.value)}
+              />
+            </label>
+          ) : null}
           <label>
             Email
             <input

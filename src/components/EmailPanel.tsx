@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext'
 import {
   buildSaveTheDateContent,
   emailjsConfigured,
+  greetingName,
   mailtoDraft,
   sendSaveTheDate,
 } from '../lib/email'
@@ -46,6 +47,8 @@ const SAMPLE_GUEST: Guest = {
   tags: [],
   rsvpStatus: 'unknown',
   physicalInvite: false,
+  plusOne: true,
+  plusOneName: 'Choco Marks',
   addressStatus: 'not_needed',
   saveTheDateStatus: 'not_sent',
   saveTheDateAcknowledged: false,
@@ -253,7 +256,8 @@ export function EmailPanel() {
             />
           </label>
           <p className="tiny muted">
-            Tokens: <code>{'{{firstName}}'}</code>, <code>{'{{coupleNames}}'}</code>
+            Tokens: <code>{'{{firstName}}'}</code> (includes a plus one: Caroline and Choco),{' '}
+            <code>{'{{coupleNames}}'}</code>
           </p>
 
           <div className="stack">
@@ -375,7 +379,7 @@ export function EmailPanel() {
                 />
                 <span className="recipient-meta">
                   <span className="recipient-name">
-                    {g.firstName} {g.lastName}
+                    {greetingName(g) || `${g.firstName} ${g.lastName}`.trim()}
                     <span className="tiny muted">
                       {' '}
                       · {g.saveTheDateStatus}

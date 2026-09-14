@@ -143,6 +143,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           firstName: '',
           lastName: '',
           email: '',
+          plusOne: false,
+          plusOneName: '',
           partySize: 1,
           tags: [],
           rsvpStatus: 'unknown',
