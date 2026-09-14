@@ -25,6 +25,13 @@ export function GuestsPanel() {
   const [ackRefreshing, setAckRefreshing] = useState(false)
   const [dragId, setDragId] = useState<string | null>(null)
   const [overId, setOverId] = useState<string | null>(null)
+  const [ghost, setGhost] = useState<{
+    x: number
+    y: number
+    width: number
+    offsetX: number
+    offsetY: number
+  } | null>(null)
   const tableWrapRef = useRef<HTMLDivElement>(null)
   const dragIdRef = useRef<string | null>(null)
   const overIdRef = useRef<string | null>(null)
@@ -79,6 +86,7 @@ export function GuestsPanel() {
     overIdRef.current = null
     setDragId(null)
     setOverId(null)
+    setGhost(null)
     document.body.classList.remove('is-reordering')
     if (from && to && from !== to) reorderGuests(from, to)
   }
@@ -86,16 +94,32 @@ export function GuestsPanel() {
   function onHandlePointerDown(event: PointerEvent<HTMLButtonElement>, id: string) {
     if (event.button !== 0) return
     event.preventDefault()
+    const row = event.currentTarget.closest('tr')
+    const rect = row?.getBoundingClientRect()
     dragIdRef.current = id
     overIdRef.current = null
     setDragId(id)
     setOverId(null)
+    setGhost(
+      rect
+        ? {
+            x: event.clientX,
+            y: event.clientY,
+            width: rect.width,
+            offsetX: event.clientX - rect.left,
+            offsetY: event.clientY - rect.top,
+          }
+        : null,
+    )
     document.body.classList.add('is-reordering')
     event.currentTarget.setPointerCapture(event.pointerId)
   }
 
   function onHandlePointerMove(event: PointerEvent<HTMLButtonElement>) {
     if (!dragIdRef.current) return
+    setGhost((current) =>
+      current ? { ...current, x: event.clientX, y: event.clientY } : current,
+    )
     const wrap = tableWrapRef.current
     if (wrap) {
       const rect = wrap.getBoundingClientRect()
@@ -134,6 +158,8 @@ export function GuestsPanel() {
       `Acknowledgements: ${result.matched} marked received, ${result.unmatched} unmatched rows skipped.`,
     )
   }
+
+  const dragged = dragId ? guests.find((g) => g.id === dragId) : null
 
   return (
     <section className="panel">
@@ -378,6 +404,24 @@ export function GuestsPanel() {
           </tbody>
         </table>
       </div>
+
+      {dragged && ghost
+        ? createPortal(
+            <div
+              className="drag-ghost"
+              style={{
+                width: ghost.width,
+                transform: `translate(${ghost.x - ghost.offsetX}px, ${ghost.y - ghost.offsetY}px)`,
+              }}
+            >
+              <strong>
+                {dragged.firstName} {dragged.lastName}
+              </strong>
+              <span className="mono">{dragged.email || 'No email'}</span>
+            </div>,
+            document.body,
+          )
+        : null}
 
       {editing ? (
         <GuestEditor
