@@ -296,6 +296,25 @@ a {
   outline-offset: 1px;
 }
 
+/* Native select popups ignore translucent --input-bg and often ignore
+   the page color-scheme, so force light text on an opaque dark field.
+   Hex fallbacks cover Windows option menus that don't resolve variables. */
+[data-theme='dark'] select.input,
+[data-theme='dark'] select.input option {
+  background-color: #1a2421;
+  background-color: var(--modal-bg);
+  color: #e8efeb;
+  color: var(--ink);
+  color-scheme: dark;
+}
+
+[data-theme='dark'] select.input option:checked {
+  background-color: #3d7a6a;
+  background-color: var(--accent-deep);
+  color: #e8efeb;
+  color: var(--ink);
+}
+
 .toolbar,
 .import-row {
   display: flex;
